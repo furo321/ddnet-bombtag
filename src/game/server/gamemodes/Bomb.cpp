@@ -1,6 +1,6 @@
 /* (c) Shereef Marzouk. See "licence DDRace.txt" and the readme.txt in the root of the distribution for more information. */
 /* Based on Race mod stuff and tweaked by GreYFoX@GTi and others to fit our DDRace needs. */
-#include "DDRace.h"
+#include "Bomb.h"
 
 #include <engine/server.h>
 #include <engine/shared/config.h>
@@ -11,25 +11,24 @@
 #include <game/server/score.h>
 #include <game/version.h>
 
-#define GAME_TYPE_NAME "DDraceNetwork"
-#define TEST_TYPE_NAME "TestDDraceNetwork"
+#define GAME_TYPE_NAME "BOMB"
 
-CGameControllerDDRace::CGameControllerDDRace(class CGameContext *pGameServer) :
+CGameControllerBomb::CGameControllerBomb(class CGameContext *pGameServer) :
 	IGameController(pGameServer), m_Teams(pGameServer), m_pLoadBestTimeResult(nullptr)
 {
-	m_pGameType = g_Config.m_SvTestingCommands ? TEST_TYPE_NAME : GAME_TYPE_NAME;
+	m_pGameType = GAME_TYPE_NAME;
 
 	InitTeleporter();
 }
 
-CGameControllerDDRace::~CGameControllerDDRace() = default;
+CGameControllerBomb::~CGameControllerBomb() = default;
 
-CScore *CGameControllerDDRace::Score()
+CScore *CGameControllerBomb::Score()
 {
 	return GameServer()->Score();
 }
 
-void CGameControllerDDRace::OnCharacterSpawn(CCharacter *pChr)
+void CGameControllerBomb::OnCharacterSpawn(CCharacter *pChr)
 {
 	IGameController::OnCharacterSpawn(pChr);
 	pChr->SetTeams(&m_Teams);
@@ -37,7 +36,7 @@ void CGameControllerDDRace::OnCharacterSpawn(CCharacter *pChr)
 	m_Teams.OnCharacterSpawn(pChr->GetPlayer()->GetCID());
 }
 
-void CGameControllerDDRace::HandleCharacterTiles(CCharacter *pChr, int MapIndex)
+void CGameControllerBomb::HandleCharacterTiles(CCharacter *pChr, int MapIndex)
 {
 	CPlayer *pPlayer = pChr->GetPlayer();
 	const int ClientID = pPlayer->GetCID();
@@ -121,7 +120,7 @@ void CGameControllerDDRace::HandleCharacterTiles(CCharacter *pChr, int MapIndex)
 	}
 }
 
-void CGameControllerDDRace::OnPlayerConnect(CPlayer *pPlayer)
+void CGameControllerBomb::OnPlayerConnect(CPlayer *pPlayer)
 {
 	IGameController::OnPlayerConnect(pPlayer);
 	int ClientID = pPlayer->GetCID();
@@ -144,7 +143,7 @@ void CGameControllerDDRace::OnPlayerConnect(CPlayer *pPlayer)
 	}
 }
 
-void CGameControllerDDRace::OnPlayerDisconnect(CPlayer *pPlayer, const char *pReason)
+void CGameControllerBomb::OnPlayerDisconnect(CPlayer *pPlayer, const char *pReason)
 {
 	int ClientID = pPlayer->GetCID();
 	bool WasModerator = pPlayer->m_Moderating && Server()->ClientIngame(ClientID);
@@ -158,13 +157,13 @@ void CGameControllerDDRace::OnPlayerDisconnect(CPlayer *pPlayer, const char *pRe
 		m_Teams.SetForceCharacterTeam(ClientID, TEAM_FLOCK);
 }
 
-void CGameControllerDDRace::OnReset()
+void CGameControllerBomb::OnReset()
 {
 	IGameController::OnReset();
 	m_Teams.Reset();
 }
 
-void CGameControllerDDRace::Tick()
+void CGameControllerBomb::Tick()
 {
 	IGameController::Tick();
 	m_Teams.ProcessSaveTeam();
@@ -188,7 +187,7 @@ void CGameControllerDDRace::Tick()
 	}
 }
 
-void CGameControllerDDRace::DoTeamChange(class CPlayer *pPlayer, int Team, bool DoChatMsg)
+void CGameControllerBomb::DoTeamChange(class CPlayer *pPlayer, int Team, bool DoChatMsg)
 {
 	Team = ClampTeam(Team);
 	if(Team == pPlayer->GetTeam())
@@ -211,7 +210,7 @@ void CGameControllerDDRace::DoTeamChange(class CPlayer *pPlayer, int Team, bool 
 	IGameController::DoTeamChange(pPlayer, Team, DoChatMsg);
 }
 
-CClientMask CGameControllerDDRace::GetMaskForPlayerWorldEvent(int Asker, int ExceptID)
+CClientMask CGameControllerBomb::GetMaskForPlayerWorldEvent(int Asker, int ExceptID)
 {
 	if(Asker == -1)
 		return CClientMask().set().reset(ExceptID);
@@ -219,7 +218,7 @@ CClientMask CGameControllerDDRace::GetMaskForPlayerWorldEvent(int Asker, int Exc
 	return m_Teams.TeamMask(GetPlayerTeam(Asker), ExceptID, Asker);
 }
 
-void CGameControllerDDRace::InitTeleporter()
+void CGameControllerBomb::InitTeleporter()
 {
 	if(!GameServer()->Collision()->Layers()->TeleLayer())
 		return;
@@ -246,7 +245,7 @@ void CGameControllerDDRace::InitTeleporter()
 	}
 }
 
-int CGameControllerDDRace::GetPlayerTeam(int ClientID) const
+int CGameControllerBomb::GetPlayerTeam(int ClientID) const
 {
 	return m_Teams.m_Core.Team(ClientID);
 }

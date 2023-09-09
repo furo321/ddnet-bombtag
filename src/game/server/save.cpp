@@ -3,7 +3,7 @@
 #include <cstdio> // sscanf
 
 #include "entities/character.h"
-#include "gamemodes/DDRace.h"
+#include "gamemodes/Bomb.h"
 #include "player.h"
 #include "teams.h"
 #include <engine/shared/config.h>
@@ -445,7 +445,7 @@ int CSaveTeam::Save(CGameContext *pGameServer, int Team, bool Dry)
 		return 1;
 
 	IGameController *pController = pGameServer->m_pController;
-	CGameTeams *pTeams = &(((CGameControllerDDRace *)pController)->m_Teams);
+	CGameTeams *pTeams = &(((CGameControllerBomb *)pController)->m_Teams);
 
 	m_MembersCount = pTeams->Count(Team);
 	if(m_MembersCount <= 0)
@@ -530,7 +530,7 @@ bool CSaveTeam::HandleSaveError(int Result, int ClientID, CGameContext *pGameCon
 void CSaveTeam::Load(CGameContext *pGameServer, int Team, bool KeepCurrentWeakStrong)
 {
 	IGameController *pController = pGameServer->m_pController;
-	CGameTeams *pTeams = &(((CGameControllerDDRace *)pController)->m_Teams);
+	CGameTeams *pTeams = &(((CGameControllerBomb *)pController)->m_Teams);
 
 	pTeams->ChangeTeamState(Team, m_TeamState);
 	pTeams->SetTeamLock(Team, m_TeamLocked);

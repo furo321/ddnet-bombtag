@@ -9,7 +9,7 @@
 #include <game/mapitems.h>
 
 #include <game/server/gamecontext.h>
-#include <game/server/gamemodes/DDRace.h>
+#include <game/server/gamemodes/Bomb.h>
 
 CProjectile::CProjectile(
 	CGameWorld *pGameWorld,
@@ -276,7 +276,7 @@ void CProjectile::Tick()
 		z = GameServer()->Collision()->IsTeleport(x);
 	else
 		z = GameServer()->Collision()->IsTeleportWeapon(x);
-	CGameControllerDDRace *pControllerDDRace = (CGameControllerDDRace *)GameServer()->m_pController;
+	CGameControllerBomb *pControllerDDRace = (CGameControllerBomb *)GameServer()->m_pController;
 	if(z && !pControllerDDRace->m_TeleOuts[z - 1].empty())
 	{
 		int TeleOut = GameServer()->m_World.m_Core.RandomOr0(pControllerDDRace->m_TeleOuts[z - 1].size());

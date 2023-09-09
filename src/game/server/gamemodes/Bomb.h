@@ -9,11 +9,11 @@
 #include <vector>
 
 struct CScoreLoadBestTimeResult;
-class CGameControllerDDRace : public IGameController
+class CGameControllerBomb : public IGameController
 {
 public:
-	CGameControllerDDRace(class CGameContext *pGameServer);
-	~CGameControllerDDRace();
+	CGameControllerBomb(class CGameContext *pGameServer);
+	~CGameControllerBomb();
 
 	CScore *Score();
 

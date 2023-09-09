@@ -5,7 +5,7 @@
 
 #include <engine/shared/config.h>
 #include <game/server/entities/character.h>
-#include <game/server/gamemodes/DDRace.h>
+#include <game/server/gamemodes/Bomb.h>
 #include <game/server/player.h>
 #include <game/server/save.h>
 #include <game/server/teams.h>
@@ -304,7 +304,7 @@ void CGameContext::ConToTeleporter(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
 	unsigned int TeleTo = pResult->GetInteger(0);
-	CGameControllerDDRace *pGameControllerDDRace = (CGameControllerDDRace *)pSelf->m_pController;
+	CGameControllerBomb *pGameControllerDDRace = (CGameControllerBomb *)pSelf->m_pController;
 
 	if(!pGameControllerDDRace->m_TeleOuts[TeleTo - 1].empty())
 	{
@@ -321,7 +321,7 @@ void CGameContext::ConToCheckTeleporter(IConsole::IResult *pResult, void *pUserD
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
 	unsigned int TeleTo = pResult->GetInteger(0);
-	CGameControllerDDRace *pGameControllerDDRace = (CGameControllerDDRace *)pSelf->m_pController;
+	CGameControllerBomb *pGameControllerDDRace = (CGameControllerBomb *)pSelf->m_pController;
 
 	if(!pGameControllerDDRace->m_TeleCheckOuts[TeleTo - 1].empty())
 	{
@@ -715,7 +715,7 @@ void CGameContext::ConModerate(IConsole::IResult *pResult, void *pUserData)
 void CGameContext::ConSetDDRTeam(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
-	CGameControllerDDRace *pController = (CGameControllerDDRace *)pSelf->m_pController;
+	CGameControllerBomb *pController = (CGameControllerBomb *)pSelf->m_pController;
 
 	if(g_Config.m_SvTeam == SV_TEAM_FORBIDDEN || g_Config.m_SvTeam == SV_TEAM_FORCED_SOLO)
 	{
@@ -741,7 +741,7 @@ void CGameContext::ConSetDDRTeam(IConsole::IResult *pResult, void *pUserData)
 void CGameContext::ConUninvite(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
-	CGameControllerDDRace *pController = (CGameControllerDDRace *)pSelf->m_pController;
+	CGameControllerBomb *pController = (CGameControllerBomb *)pSelf->m_pController;
 
 	pController->m_Teams.SetClientInvited(pResult->GetInteger(1), pResult->GetVictim(), false);
 }

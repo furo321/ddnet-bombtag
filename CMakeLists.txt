@@ -2500,8 +2500,8 @@ if(SERVER)
     gamecontext.h
     gamecontroller.cpp
     gamecontroller.h
-    gamemodes/DDRace.cpp
-    gamemodes/DDRace.h
+    gamemodes/Bomb.cpp
+    gamemodes/Bomb.h
     gameworld.cpp
     gameworld.h
     player.cpp
