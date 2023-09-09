@@ -15,8 +15,6 @@ public:
 	CGameControllerBomb(class CGameContext *pGameServer);
 	~CGameControllerBomb();
 
-	CScore *Score();
-
 	void OnCharacterSpawn(class CCharacter *pChr) override;
 	void HandleCharacterTiles(class CCharacter *pChr, int MapIndex) override;
 
@@ -41,5 +39,21 @@ public:
 	std::map<int, std::vector<vec2>> m_TeleCheckOuts;
 
 	std::shared_ptr<CScoreLoadBestTimeResult> m_pLoadBestTimeResult;
+
+    // BOMB
+    struct
+	{
+		int m_ClientID;
+		int m_Tick;
+	} m_Bomb;
+
+    void SetSkins();
+    void SetSkin(class CPlayer *pPlayer);
+    void MakeRandomBomb();
+    void MakeBomb(int ClientID);
+    void DoWinCheck();
+    int AmountOfPlayers();
+
+    void OnHammerHit(int ClientID, int TargetID) override;
 };
 #endif // GAME_SERVER_GAMEMODES_DDRACE_H
