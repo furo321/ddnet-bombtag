@@ -2092,21 +2092,7 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 
 			ADD_INT(q, m_aClients[i].m_Country); // client country
 
-			int Score;
-			if(m_aClients[i].m_Score.has_value())
-			{
-				Score = m_aClients[i].m_Score.value();
-				if(Score == 9999)
-					Score = -10000;
-				else if(Score == 0) // 0 time isn't displayed otherwise.
-					Score = -1;
-				else
-					Score = -Score;
-			}
-			else
-			{
-				Score = -9999;
-			}
+			int Score = m_aClients[i].m_Score.value_or(0);
 
 			ADD_INT(q, Score); // client score
 			ADD_INT(q, GameServer()->IsClientPlayer(i) ? 1 : 0); // is player?
@@ -2321,7 +2307,6 @@ void CServer::UpdateRegisterServerInfo()
 		"\"size\":%d"
 		"},"
 		"\"version\":\"%s\","
-		"\"client_score_kind\":\"time\","
 		"\"clients\":[",
 		MaxClients,
 		MaxPlayers,
@@ -2358,7 +2343,7 @@ void CServer::UpdateRegisterServerInfo()
 				EscapeJson(aCName, sizeof(aCName), ClientName(i)),
 				EscapeJson(aCClan, sizeof(aCClan), ClientClan(i)),
 				m_aClients[i].m_Country,
-				m_aClients[i].m_Score.value_or(-9999),
+				m_aClients[i].m_Score.value_or(0),
 				JsonBool(GameServer()->IsClientPlayer(i)),
 				aExtraPlayerInfo);
 			str_append(aInfo, aClientInfo);

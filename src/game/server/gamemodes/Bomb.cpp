@@ -53,6 +53,7 @@ void CGameControllerBomb::OnPlayerConnect(CPlayer *pPlayer)
 
 		GameServer()->SendChatTarget(ClientID, "BOMB Mod. Version: " GAME_VERSION);
 	}
+	m_Score[ClientID] = 0;
 }
 
 void CGameControllerBomb::OnPlayerDisconnect(CPlayer *pPlayer, const char *pReason)
@@ -222,6 +223,17 @@ void CGameControllerBomb::DoWinCheck()
 		GameServer()->CreateSound(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, SOUND_GRENADE_EXPLODE);
 		GameServer()->m_apPlayers[m_Bomb.m_ClientID]->KillCharacter();
 		MakeRandomBomb();
+
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf), "%s won the round!", Server()->ClientName(m_Bomb.m_ClientID));
+		GameServer()->SendBroadcast(aBuf, -1);
+		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf, -1, CGameContext::CHAT_SIX);
+		m_Score[m_Bomb.m_ClientID]++;
+		GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_Score = m_Score[m_Bomb.m_ClientID];
+		EndRound();
+
+		DoWarmup(5);
+		GameServer()->CreateSoundGlobal(SOUND_CTF_CAPTURE);
 	}
 }
 

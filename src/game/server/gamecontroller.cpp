@@ -578,7 +578,6 @@ void IGameController::Snap(int SnappingClient)
 		return;
 
 	pGameInfoEx->m_Flags =
-		GAMEINFOFLAG_TIMESCORE |
 		GAMEINFOFLAG_GAMETYPE_RACE |
 		GAMEINFOFLAG_GAMETYPE_DDRACE |
 		GAMEINFOFLAG_GAMETYPE_DDNET |

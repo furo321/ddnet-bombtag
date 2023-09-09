@@ -47,6 +47,8 @@ public:
 		int m_Tick;
 	} m_Bomb;
 
+    int m_Score[MAX_CLIENTS];
+
     void SetSkins();
     void SetSkin(class CPlayer *pPlayer);
     void MakeRandomBomb();

@@ -339,24 +339,7 @@ void CPlayer::Snap(int SnappingClient)
 	int SnappingClientVersion = GameServer()->GetClientVersion(SnappingClient);
 	int Latency = SnappingClient == SERVER_DEMO_CLIENT ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aCurLatency[m_ClientID];
 
-	int Score;
-	// This is the time sent to the player while ingame (do not confuse to the one reported to the master server).
-	// Due to clients expecting this as a negative value, we have to make sure it's negative.
-	// Special numbers:
-	// -9999: means no time and isn't displayed in the scoreboard.
-	if(m_Score.has_value())
-	{
-		// shift the time by a second if the player actually took 9999
-		// seconds to finish the map.
-		if(m_Score.value() == 9999)
-			Score = -10000;
-		else
-			Score = -m_Score.value();
-	}
-	else
-	{
-		Score = -9999;
-	}
+	int Score = m_Score.value_or(0);
 
 	// send 0 if times of others are not shown
 	if(SnappingClient != m_ClientID && g_Config.m_SvHideScore)
@@ -392,7 +375,7 @@ void CPlayer::Snap(int SnappingClient)
 			pPlayerInfo->m_PlayerFlags |= protocol7::PLAYERFLAG_ADMIN;
 
 		// Times are in milliseconds for 0.7
-		pPlayerInfo->m_Score = Score == -9999 ? -1 : -Score * 1000;
+		pPlayerInfo->m_Score = Score;
 		pPlayerInfo->m_Latency = Latency;
 	}
 
