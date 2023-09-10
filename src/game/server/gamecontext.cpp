@@ -2358,21 +2358,10 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			// Switch team on given client and kill/respawn them
 			if(m_pController->CanJoinTeam(pMsg->m_Team, ClientID))
 			{
-				if(pPlayer->IsPaused())
-					SendChatTarget(ClientID, "Use /pause first then you can kill");
-				else
-				{
-					if(pPlayer->GetTeam() == TEAM_SPECTATORS || pMsg->m_Team == TEAM_SPECTATORS)
-						m_VoteUpdate = true;
-					m_pController->DoTeamChange(pPlayer, pMsg->m_Team);
-					pPlayer->m_TeamChangeTick = Server()->Tick();
-				}
-			}
-			else
-			{
-				char aBuf[128];
-				str_format(aBuf, sizeof(aBuf), "Only %d active players are allowed", Server()->MaxClients() - g_Config.m_SvSpectatorSlots);
-				SendBroadcast(aBuf, ClientID);
+				if(pPlayer->GetTeam() == TEAM_SPECTATORS || pMsg->m_Team == TEAM_SPECTATORS)
+					m_VoteUpdate = true;
+				m_pController->DoTeamChange(pPlayer, pMsg->m_Team);
+				pPlayer->m_TeamChangeTick = Server()->Tick();
 			}
 		}
 		else if(MsgID == NETMSGTYPE_CL_ISDDNETLEGACY)

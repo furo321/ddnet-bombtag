@@ -16,7 +16,10 @@ public:
 	~CGameControllerBomb();
 
 	void OnCharacterSpawn(class CCharacter *pChr) override;
+    int OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon) override;
 	void HandleCharacterTiles(class CCharacter *pChr, int MapIndex) override;
+
+    bool CanJoinTeam(int Team, int NotThisID) override;
 
 	void OnPlayerConnect(class CPlayer *pPlayer) override;
 	void OnPlayerDisconnect(class CPlayer *pPlayer, const char *pReason) override;
@@ -46,15 +49,32 @@ public:
 		int m_ClientID;
 		int m_Tick;
 	} m_Bomb;
+    bool m_RoundActive = false;
+	int64_t m_Tick = 0;
 
-    int m_Score[MAX_CLIENTS];
+	enum
+	{
+		STATE_NONE = -2,
+		STATE_SPECTATING,
+		STATE_ACTIVE, 
+		STATE_ALIVE,
+	};
+    struct
+    {
+        int m_Score = 0;
+        int m_State = STATE_NONE;
+    } aPlayers[MAX_CLIENTS];
 
     void SetSkins();
     void SetSkin(class CPlayer *pPlayer);
     void MakeRandomBomb();
     void MakeBomb(int ClientID);
     void DoWinCheck();
-    int AmountOfPlayers();
+    int AmountOfPlayers(int State);
+	void StartBombRound();
+    void EndBombRound(bool RealEnd);
+    void UpdateTimer();
+    void RefreshState();
 
     void OnHammerHit(int ClientID, int TargetID) override;
 };

@@ -16,6 +16,11 @@ CGameControllerBomb::CGameControllerBomb(class CGameContext *pGameServer) :
 	IGameController(pGameServer), m_Teams(pGameServer)
 {
 	m_pGameType = GAME_TYPE_NAME;
+	m_Bomb.m_ClientID = -1;
+	m_Bomb.m_Tick = -1;
+	m_RoundActive = false;
+	for(int i = 0; i < MAX_CLIENTS; i++)
+		aPlayers[i].m_State = STATE_NONE;
 
 	InitTeleporter();
 }
@@ -35,9 +40,18 @@ void CGameControllerBomb::OnCharacterSpawn(CCharacter *pChr)
 	SetSkin(pChr->GetPlayer());
 }
 
+int CGameControllerBomb::OnCharacterDeath(CCharacter *pChr, CPlayer *pKiller, int Weapon)
+{
+	if(aPlayers[pChr->GetPlayer()->GetCID()].m_State >= STATE_ACTIVE && m_RoundActive)
+	{
+		GameServer()->SendBroadcast("You will automatically rejoin the game when the round is over", pChr->GetPlayer()->GetCID());
+		aPlayers[pChr->GetPlayer()->GetCID()].m_State = STATE_ACTIVE;
+	}
+	return 0;
+}
+
 void CGameControllerBomb::HandleCharacterTiles(CCharacter *pChr, int MapIndex)
 {
-
 }
 
 void CGameControllerBomb::OnPlayerConnect(CPlayer *pPlayer)
@@ -53,7 +67,7 @@ void CGameControllerBomb::OnPlayerConnect(CPlayer *pPlayer)
 
 		GameServer()->SendChatTarget(ClientID, "BOMB Mod. Version: " GAME_VERSION);
 	}
-	m_Score[ClientID] = 0;
+	aPlayers[pPlayer->GetCID()].m_Score = 0;
 }
 
 void CGameControllerBomb::OnPlayerDisconnect(CPlayer *pPlayer, const char *pReason)
@@ -65,6 +79,8 @@ void CGameControllerBomb::OnPlayerDisconnect(CPlayer *pPlayer, const char *pReas
 
 	if(!GameServer()->PlayerModerating() && WasModerator)
 		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, "Server kick/spec votes are no longer actively moderated.");
+
+	aPlayers[pPlayer->GetCID()].m_State = STATE_NONE;
 }
 
 void CGameControllerBomb::OnReset()
@@ -75,37 +91,24 @@ void CGameControllerBomb::OnReset()
 
 void CGameControllerBomb::Tick()
 {
-	IGameController::Tick();
-
-	if(AmountOfPlayers() > 1)
+	if(AmountOfPlayers(STATE_ACTIVE) == 1 && !m_RoundActive)
 	{
-		if(m_Bomb.m_ClientID != -1 && (!GameServer()->m_apPlayers[m_Bomb.m_ClientID] || GameServer()->m_apPlayers[m_Bomb.m_ClientID]->GetTeam() == TEAM_SPECTATORS))
-			m_Bomb.m_ClientID = -1;
-
-		if(!m_Warmup && m_Bomb.m_ClientID == -1)
-			MakeRandomBomb();
-
-		if(m_Bomb.m_Tick % SERVER_TICK_SPEED == 0)
-		{
-			CCharacter* Bomb = GameServer()->m_apPlayers[m_Bomb.m_ClientID]->GetCharacter();
-
-			if(m_Bomb.m_Tick / SERVER_TICK_SPEED <= 10)
-			{
-				if(Bomb->IsAlive())
-					Bomb->SetArmor(m_Bomb.m_Tick / SERVER_TICK_SPEED);
-				GameServer()->CreateDamageInd(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, 0, m_Bomb.m_Tick / SERVER_TICK_SPEED);
-			}
-		}
-		
-
-		m_Bomb.m_Tick--;
-		DoWinCheck();
-	}
-	else
-	{
-		if(AmountOfPlayers() == 1)
+		int seq = m_Tick % (SERVER_TICK_SPEED * 3);
+		if(seq == 50)
+			GameServer()->SendBroadcast("Waiting for players.", -1);
+		else if(seq == 100)
+			GameServer()->SendBroadcast("Waiting for players..", -1);
+		else if(seq == 0)
 			GameServer()->SendBroadcast("Waiting for players...", -1);
 	}
+	if(!m_RoundActive && AmountOfPlayers(STATE_ACTIVE) > 1)
+	{
+		GameServer()->SendBroadcast("Game started", -1);
+		StartBombRound();
+	}
+	DoWinCheck();
+	IGameController::Tick();
+	m_Tick++;
 }
 
 void CGameControllerBomb::DoTeamChange(class CPlayer *pPlayer, int Team, bool DoChatMsg)
@@ -185,7 +188,7 @@ void CGameControllerBomb::MakeRandomBomb()
 	int Players = 0;
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
-		if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
+		if(aPlayers[i].m_State == STATE_ALIVE)
 			Playing[Players++] = i;
 
 	if(Players)
@@ -202,12 +205,37 @@ void CGameControllerBomb::MakeBomb(int ClientID)
 	SetSkins();
 }
 
+bool CGameControllerBomb::CanJoinTeam(int Team, int NotThisID)
+{
+	if(!m_RoundActive && Team != TEAM_SPECTATORS)
+	{
+		aPlayers[NotThisID].m_State = STATE_ACTIVE;
+		return true;
+	}
+	if(Team == TEAM_SPECTATORS)
+	{
+		aPlayers[NotThisID].m_State = STATE_SPECTATING;
+		GameServer()->SendBroadcast("You are a spectator now\nYou won't join when a new round begins", NotThisID);
+		return true;
+	}
+	else
+	{
+		aPlayers[NotThisID].m_State = STATE_ACTIVE;
+		GameServer()->SendBroadcast("You will join the game when the round is over", NotThisID);
+		return false;
+	}
+}
+
 void CGameControllerBomb::OnHammerHit(int ClientID, int TargetID)
 {
 	if(ClientID == m_Bomb.m_ClientID)
 		MakeBomb(TargetID);
 	else if(TargetID == m_Bomb.m_ClientID)
+	{
 		m_Bomb.m_Tick -= SERVER_TICK_SPEED;
+		UpdateTimer();
+	}
+
 	else
 		GameServer()->m_apPlayers[TargetID]->GetCharacter()->Freeze(1);
 
@@ -216,33 +244,116 @@ void CGameControllerBomb::OnHammerHit(int ClientID, int TargetID)
 
 void CGameControllerBomb::DoWinCheck()
 {
-	if(m_Bomb.m_Tick <= 0)
+	if(!m_RoundActive)
+		return;
+
+	if(m_Bomb.m_Tick <= 0 || aPlayers[m_Bomb.m_ClientID].m_State <= STATE_SPECTATING)
+	{
+		if(AmountOfPlayers(STATE_ALIVE) > 2)
+			EndBombRound(false);
+		else
+			EndBombRound(true);
+	}
+	else
+	{
+		if(m_Bomb.m_Tick % SERVER_TICK_SPEED == 0)
+			UpdateTimer();
+
+		m_Bomb.m_Tick--;
+	}
+
+	// Move killed players to spectator
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(GameServer()->m_apPlayers[i])
+		{
+			if(aPlayers[i].m_State == STATE_ACTIVE)
+			{
+				if(GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
+					GameServer()->m_apPlayers[i]->SetTeam(TEAM_SPECTATORS, true);
+			}
+		}
+	}
+}
+
+int CGameControllerBomb::AmountOfPlayers(int State = STATE_ACTIVE)
+{
+	int Amount = 0;
+	for(int i = 0; i < MAX_CLIENTS; i++)
+		if(aPlayers[i].m_State == State)
+			Amount++;
+	return Amount;
+}
+
+void CGameControllerBomb::EndBombRound(bool RealEnd)
+{
+	if(!RealEnd)
 	{
 		GameServer()->SendBroadcast("BOOM!", -1);
 		GameServer()->CreateExplosion(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, m_Bomb.m_ClientID, WEAPON_GAME, false, 0);
 		GameServer()->CreateSound(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, SOUND_GRENADE_EXPLODE);
 		GameServer()->m_apPlayers[m_Bomb.m_ClientID]->KillCharacter();
-		MakeRandomBomb();
 
 		char aBuf[128];
-		str_format(aBuf, sizeof(aBuf), "%s won the round!", Server()->ClientName(m_Bomb.m_ClientID));
-		GameServer()->SendBroadcast(aBuf, -1);
+		str_format(aBuf, sizeof(aBuf), "'%s' eleliminated!", Server()->ClientName(m_Bomb.m_ClientID));
 		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf, -1, CGameContext::CHAT_SIX);
-		m_Score[m_Bomb.m_ClientID]++;
-		GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_Score = m_Score[m_Bomb.m_ClientID];
-		EndRound();
 
-		DoWarmup(5);
-		GameServer()->CreateSoundGlobal(SOUND_CTF_CAPTURE);
+		MakeRandomBomb();
+	}
+	else
+	{
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(aPlayers[i].m_State == STATE_ALIVE && i != m_Bomb.m_ClientID)
+			{
+				char aBuf[128];
+				str_format(aBuf, sizeof(aBuf), "'%s' won the round!", Server()->ClientName(i));
+				GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf, -1, CGameContext::CHAT_SIX);
+				aPlayers[i].m_Score++;
+				GameServer()->m_apPlayers[i]->m_Score = aPlayers[i].m_Score;
+				break;
+			}
+		}
+		GameServer()->SendBroadcast("BOOM!", -1);
+		GameServer()->CreateExplosion(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, m_Bomb.m_ClientID, WEAPON_GAME, false, 0);
+		GameServer()->CreateSound(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, SOUND_GRENADE_EXPLODE);
+		GameServer()->m_apPlayers[m_Bomb.m_ClientID]->KillCharacter();
+		EndRound();
+		DoWarmup(3);
+		m_RoundActive = false;
+		m_Bomb.m_ClientID = -1;
+
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(aPlayers[i].m_State >= STATE_ACTIVE)
+			{
+				aPlayers[i].m_State = STATE_ACTIVE;
+			}
+		}
 	}
 }
 
-int CGameControllerBomb::AmountOfPlayers()
+void CGameControllerBomb::StartBombRound()
 {
-	int Sum = 0;
+	m_RoundActive = true;
 	for(int i = 0; i < MAX_CLIENTS; i++)
-		if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
-			Sum++;
-	
-	return Sum;
+		if(aPlayers[i].m_State == STATE_ACTIVE)
+		{
+			GameServer()->m_apPlayers[i]->SetTeam(TEAM_FLOCK, true);
+			aPlayers[i].m_State = STATE_ALIVE;
+		}
+
+	MakeRandomBomb();
+}
+
+void CGameControllerBomb::UpdateTimer()
+{
+	for(int i = 0; i < MAX_CLIENTS; i++)
+		if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetCharacter())
+			GameServer()->m_apPlayers[i]->GetCharacter()->SetArmor(m_Bomb.m_Tick / SERVER_TICK_SPEED + 1);
+	GameServer()->CreateDamageInd(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, 0, m_Bomb.m_Tick / SERVER_TICK_SPEED);
+}
+
+void CGameControllerBomb::RefreshState()
+{
 }
