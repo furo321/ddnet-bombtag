@@ -74,7 +74,6 @@ public:
 	void StartBombRound();
 	void EndBombRound(bool RealEnd);
 	void UpdateTimer();
-	void RefreshState();
 
 	void OnHammerHit(int ClientID, int TargetID) override;
 };

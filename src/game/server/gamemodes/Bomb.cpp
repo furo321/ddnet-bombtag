@@ -101,7 +101,7 @@ void CGameControllerBomb::Tick()
 		else if(seq == 0)
 			GameServer()->SendBroadcast("Waiting for players...", -1);
 	}
-	if(!m_RoundActive && AmountOfPlayers(STATE_ACTIVE) > 1)
+	if(!m_RoundActive && AmountOfPlayers(STATE_ACTIVE) + AmountOfPlayers(STATE_ALIVE) > 1)
 	{
 		GameServer()->SendBroadcast("Game started", -1);
 		StartBombRound();
@@ -247,6 +247,14 @@ void CGameControllerBomb::DoWinCheck()
 	if(!m_RoundActive)
 		return;
 
+	if(AmountOfPlayers(STATE_ALIVE) <= 1)
+	{
+		m_RoundActive = false;
+		GameServer()->m_World.m_Paused = true;
+		m_GameOverTick = Server()->Tick();
+		m_Bomb.m_ClientID = -1;
+	}
+
 	if(m_Bomb.m_Tick <= 0 || aPlayers[m_Bomb.m_ClientID].m_State <= STATE_SPECTATING)
 	{
 		if(AmountOfPlayers(STATE_ALIVE) > 2)
@@ -324,12 +332,8 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 		m_Bomb.m_ClientID = -1;
 
 		for(int i = 0; i < MAX_CLIENTS; i++)
-		{
-			if(aPlayers[i].m_State >= STATE_ACTIVE)
-			{
+			if(aPlayers[i].m_State == STATE_ALIVE)
 				aPlayers[i].m_State = STATE_ACTIVE;
-			}
-		}
 	}
 }
 
@@ -350,10 +354,6 @@ void CGameControllerBomb::UpdateTimer()
 {
 	for(int i = 0; i < MAX_CLIENTS; i++)
 		if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetCharacter())
-			GameServer()->m_apPlayers[i]->GetCharacter()->SetArmor(m_Bomb.m_Tick / SERVER_TICK_SPEED + 1);
+			GameServer()->m_apPlayers[i]->GetCharacter()->SetArmor(m_Bomb.m_Tick / SERVER_TICK_SPEED);
 	GameServer()->CreateDamageInd(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, 0, m_Bomb.m_Tick / SERVER_TICK_SPEED);
-}
-
-void CGameControllerBomb::RefreshState()
-{
 }
