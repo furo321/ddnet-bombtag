@@ -755,7 +755,6 @@ void IGameController::DoTeamChange(CPlayer *pPlayer, int Team, bool DoChatMsg)
 	// OnPlayerInfoChange(pPlayer);
 }
 
-void IGameController::OnHammerHit(int ClientID, int TargetID) 
+void IGameController::OnHammerHit(int ClientID, int TargetID)
 {
-
 }
