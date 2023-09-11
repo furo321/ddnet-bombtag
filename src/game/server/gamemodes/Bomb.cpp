@@ -68,6 +68,10 @@ void CGameControllerBomb::OnPlayerConnect(CPlayer *pPlayer)
 		GameServer()->SendChatTarget(ClientID, "BOMB Mod. Version: " GAME_VERSION);
 	}
 	aPlayers[pPlayer->GetCID()].m_Score = 0;
+	if(m_RoundActive)
+	{
+		GameServer()->SendBroadcast("There's currently a game in progress, you'll join once the round is over!", ClientID);
+	}
 }
 
 void CGameControllerBomb::OnPlayerDisconnect(CPlayer *pPlayer, const char *pReason)
@@ -101,7 +105,7 @@ void CGameControllerBomb::Tick()
 		else if(seq == 0)
 			GameServer()->SendBroadcast("Waiting for players...", -1);
 	}
-	if(!m_RoundActive && AmountOfPlayers(STATE_ACTIVE) + AmountOfPlayers(STATE_ALIVE) > 1)
+	if(!m_RoundActive && AmountOfPlayers(STATE_ACTIVE) + AmountOfPlayers(STATE_ALIVE) > 1 && !m_Warmup)
 	{
 		GameServer()->SendBroadcast("Game started", -1);
 		StartBombRound();
@@ -247,12 +251,19 @@ void CGameControllerBomb::DoWinCheck()
 	if(!m_RoundActive)
 		return;
 
+	// check if bomb as left
+
+
 	if(AmountOfPlayers(STATE_ALIVE) <= 1)
 	{
 		m_RoundActive = false;
 		GameServer()->m_World.m_Paused = true;
 		m_GameOverTick = Server()->Tick();
 		m_Bomb.m_ClientID = -1;
+		DoWarmup(3);
+		for(int i = 0; i < MAX_CLIENTS; i++)
+			if(aPlayers[i].m_State == STATE_ALIVE)
+				aPlayers[i].m_State = STATE_ACTIVE;
 	}
 
 	if(m_Bomb.m_Tick <= 0 || aPlayers[m_Bomb.m_ClientID].m_State <= STATE_SPECTATING)
@@ -275,10 +286,12 @@ void CGameControllerBomb::DoWinCheck()
 	{
 		if(GameServer()->m_apPlayers[i])
 		{
-			if(aPlayers[i].m_State == STATE_ACTIVE)
+			if(aPlayers[i].m_State == STATE_ACTIVE && !m_Warmup)
 			{
 				if(GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
+				{
 					GameServer()->m_apPlayers[i]->SetTeam(TEAM_SPECTATORS, true);
+				}
 			}
 		}
 	}
@@ -303,7 +316,7 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 		GameServer()->m_apPlayers[m_Bomb.m_ClientID]->KillCharacter();
 
 		char aBuf[128];
-		str_format(aBuf, sizeof(aBuf), "'%s' eleliminated!", Server()->ClientName(m_Bomb.m_ClientID));
+		str_format(aBuf, sizeof(aBuf), "'%s' eliminated!", Server()->ClientName(m_Bomb.m_ClientID));
 		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf, -1, CGameContext::CHAT_SIX);
 
 		MakeRandomBomb();
