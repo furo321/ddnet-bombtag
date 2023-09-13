@@ -10,6 +10,8 @@
 #include <game/server/player.h>
 #include <game/version.h>
 
+#include <random>
+
 #define GAME_TYPE_NAME "BOMB"
 
 CGameControllerBomb::CGameControllerBomb(class CGameContext *pGameServer) :
@@ -197,7 +199,9 @@ void CGameControllerBomb::MakeRandomBomb(int Count)
 		if(aPlayers[i].m_State == STATE_ALIVE)
 			Playing[Players++] = i;
 
-	std::random_shuffle(Playing, Playing+Players);
+	std::random_device rd;
+	std::mt19937 g(rd());
+	std::shuffle(Playing, Playing+Players, g);
 
 	for(int i = 0; i < Count; i++)
 	{
