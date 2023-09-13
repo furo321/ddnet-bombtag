@@ -2502,6 +2502,7 @@ if(SERVER)
     gamecontroller.h
     gamemodes/Bomb.cpp
     gamemodes/Bomb.h
+    gamemodes/bomb_config_variables.h
     gameworld.cpp
     gameworld.h
     player.cpp

@@ -209,7 +209,7 @@ void CGameControllerBomb::MakeBomb(int ClientID)
 {
 	GameServer()->SendBroadcast("", aPlayers[ClientID].m_Bomb); // clear previous broadcast
 	aPlayers[ClientID].m_Bomb = true;
-	aPlayers[ClientID].m_Tick = 1 * SERVER_TICK_SPEED;
+	aPlayers[ClientID].m_Tick = g_Config.m_BombtagSecondsToExplosion * SERVER_TICK_SPEED;
 
 	//char aBuf[128];
 	//str_format(aBuf, sizeof(aBuf), "'%s' is the new bomb!", Server()->ClientName(m_Bomb.m_ClientID));
@@ -250,13 +250,13 @@ void CGameControllerBomb::OnHammerHit(int ClientID, int TargetID)
 		aPlayers[ClientID].m_Bomb = false;
 		MakeBomb(TargetID);
 	}
-	else if(aPlayers[TargetID].m_Bomb && !aPlayers[ClientID].m_Bomb)
+	else if(!aPlayers[ClientID].m_Bomb && aPlayers[TargetID].m_Bomb)
 	{
-		aPlayers[TargetID].m_Bomb -= SERVER_TICK_SPEED;
+		aPlayers[TargetID].m_Tick -= g_Config.m_BombtagBombDamage * SERVER_TICK_SPEED;
 		UpdateTimer();
 	}
-	else
-		GameServer()->m_apPlayers[TargetID]->GetCharacter()->Freeze(1);
+	else if(!aPlayers[ClientID].m_Bomb && !aPlayers[TargetID].m_Bomb && g_Config.m_BombtagHammerFreeze)
+		GameServer()->m_apPlayers[TargetID]->GetCharacter()->Freeze(g_Config.m_BombtagHammerFreeze);
 
 	SetSkins();
 }
@@ -345,7 +345,15 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 
 	if(!RealEnd)
 	{
-		MakeRandomBomb(std::ceil(alive/8.0f));
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(aPlayers[i].m_State == STATE_ALIVE)
+			{
+				aPlayers[i].m_Score += g_Config.m_BombtagScoreForSuriving;
+				GameServer()->m_apPlayers[i]->m_Score = aPlayers[i].m_Score;
+			}
+		}
+		MakeRandomBomb(std::ceil(alive/(float)g_Config.m_BombtagBombsPerPlayer));
 	}
 	else
 	{
@@ -356,7 +364,7 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 				char aBuf[128];
 				str_format(aBuf, sizeof(aBuf), "'%s' won the round!", Server()->ClientName(i));
 				GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf, -1, CGameContext::CHAT_SIX);
-				aPlayers[i].m_Score++;
+				aPlayers[i].m_Score += g_Config.m_BombtagScoreForWinning;
 				GameServer()->m_apPlayers[i]->m_Score = aPlayers[i].m_Score;
 				break;
 			}
@@ -379,7 +387,6 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 
 void CGameControllerBomb::ExplodeBomb(int ClientID)
 {
-	GameServer()->SendBroadcast("BOOM!", -1);
 	GameServer()->CreateExplosion(GameServer()->m_apPlayers[ClientID]->m_ViewPos, ClientID, WEAPON_GAME, false, 0);
 	GameServer()->CreateSound(GameServer()->m_apPlayers[ClientID]->m_ViewPos, SOUND_GRENADE_EXPLODE);
 	GameServer()->m_apPlayers[ClientID]->KillCharacter();
@@ -405,7 +412,7 @@ void CGameControllerBomb::StartBombRound()
 			players++;
 		}
 	}
-	MakeRandomBomb(std::ceil(players/8.0f));
+	MakeRandomBomb(std::ceil(players/(float)g_Config.m_BombtagBombsPerPlayer));
 }
 
 void CGameControllerBomb::UpdateTimer()
