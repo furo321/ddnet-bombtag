@@ -95,6 +95,7 @@ void CGameControllerBomb::OnReset()
 
 void CGameControllerBomb::Tick()
 {
+	IGameController::Tick();
 	if(AmountOfPlayers(STATE_ACTIVE) == 1 && !m_RoundActive)
 	{
 		int seq = m_Tick % (SERVER_TICK_SPEED * 3);
@@ -111,7 +112,6 @@ void CGameControllerBomb::Tick()
 		StartBombRound();
 	}
 	DoWinCheck();
-	IGameController::Tick();
 	m_Tick++;
 }
 
@@ -205,6 +205,11 @@ void CGameControllerBomb::MakeBomb(int ClientID)
 {
 	GameServer()->SendBroadcast("", m_Bomb.m_ClientID); // clear previous broadcast
 	m_Bomb.m_ClientID = ClientID;
+
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "'%s' is the new bomb!", Server()->ClientName(m_Bomb.m_ClientID));
+	GameServer()->SendBroadcast(aBuf, ClientID);
+
 	GameServer()->SendBroadcast("You are the new bomb!\nHit another player before the time runs out!", ClientID);
 	SetSkins();
 }
@@ -335,15 +340,23 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 				break;
 			}
 		}
-		GameServer()->SendBroadcast("BOOM!", -1);
-		GameServer()->CreateExplosion(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, m_Bomb.m_ClientID, WEAPON_GAME, false, 0);
-		GameServer()->CreateSound(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, SOUND_GRENADE_EXPLODE);
-		GameServer()->m_apPlayers[m_Bomb.m_ClientID]->KillCharacter();
+		if(aPlayers[m_Bomb.m_ClientID].m_State <= STATE_SPECTATING && GameServer()->m_apPlayers[m_Bomb.m_ClientID])
+		{
+			GameServer()->SendBroadcast("BOOM!", -1);
+			GameServer()->CreateExplosion(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, m_Bomb.m_ClientID, WEAPON_GAME, false, 0);
+			GameServer()->CreateSound(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, SOUND_GRENADE_EXPLODE);
+			GameServer()->m_apPlayers[m_Bomb.m_ClientID]->KillCharacter();
+		}
+		else
+		{
+			GameServer()->SendBroadcast("Bomb left the game!", -1);
+		}
 		EndRound();
 		DoWarmup(3);
 		m_RoundActive = false;
 		m_Bomb.m_ClientID = -1;
-
+		EndRound();
+		DoWarmup(3);
 		for(int i = 0; i < MAX_CLIENTS; i++)
 			if(aPlayers[i].m_State == STATE_ALIVE)
 				aPlayers[i].m_State = STATE_ACTIVE;
