@@ -44,11 +44,6 @@ public:
 	std::shared_ptr<CScoreLoadBestTimeResult> m_pLoadBestTimeResult;
 
 	// BOMB
-	struct
-	{
-		int m_ClientID;
-		int m_Tick;
-	} m_Bomb;
 	bool m_RoundActive = false;
 	int64_t m_Tick = 0;
 
@@ -63,16 +58,20 @@ public:
 	{
 		int m_Score = 0;
 		int m_State = STATE_NONE;
+		int m_Tick = 0;
+		bool m_Bomb = false;
 	} aPlayers[MAX_CLIENTS];
 
 	void SetSkins();
 	void SetSkin(class CPlayer *pPlayer);
-	void MakeRandomBomb();
+	void MakeRandomBomb(int Count);
 	void MakeBomb(int ClientID);
 	void DoWinCheck();
 	int AmountOfPlayers(int State);
+	int AmountOfBombs();
 	void StartBombRound();
 	void EndBombRound(bool RealEnd);
+	void ExplodeBomb(int ClientID);
 	void UpdateTimer();
 
 	void OnHammerHit(int ClientID, int TargetID) override;

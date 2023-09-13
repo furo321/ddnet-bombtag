@@ -16,11 +16,13 @@ CGameControllerBomb::CGameControllerBomb(class CGameContext *pGameServer) :
 	IGameController(pGameServer), m_Teams(pGameServer)
 {
 	m_pGameType = GAME_TYPE_NAME;
-	m_Bomb.m_ClientID = -1;
-	m_Bomb.m_Tick = -1;
 	m_RoundActive = false;
 	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
 		aPlayers[i].m_State = STATE_NONE;
+		aPlayers[i].m_Bomb = false;
+	}
+		
 
 	InitTeleporter();
 }
@@ -174,7 +176,7 @@ void CGameControllerBomb::SetSkins()
 
 void CGameControllerBomb::SetSkin(CPlayer *pPlayer)
 {
-	if(m_Bomb.m_ClientID == pPlayer->GetCID())
+	if(aPlayers[pPlayer->GetCID()].m_Bomb)
 	{
 		str_copy(pPlayer->m_TeeInfos.m_aSkinName, "bomb", sizeof(pPlayer->m_TeeInfos.m_aSkinName));
 		pPlayer->m_TeeInfos.m_UseCustomColor = 0;
@@ -186,7 +188,7 @@ void CGameControllerBomb::SetSkin(CPlayer *pPlayer)
 	}
 }
 
-void CGameControllerBomb::MakeRandomBomb()
+void CGameControllerBomb::MakeRandomBomb(int Count)
 {
 	int Playing[MAX_CLIENTS];
 	int Players = 0;
@@ -195,20 +197,26 @@ void CGameControllerBomb::MakeRandomBomb()
 		if(aPlayers[i].m_State == STATE_ALIVE)
 			Playing[Players++] = i;
 
-	if(Players)
-		MakeBomb(Playing[secure_rand() % Players]);
+	std::random_shuffle(Playing, Playing+Players);
 
-	m_Bomb.m_Tick = 20 * SERVER_TICK_SPEED;
+	for(int i = 0; i < Count; i++)
+	{
+		MakeBomb(Playing[i]);
+	}
 }
 
 void CGameControllerBomb::MakeBomb(int ClientID)
 {
-	GameServer()->SendBroadcast("", m_Bomb.m_ClientID); // clear previous broadcast
-	m_Bomb.m_ClientID = ClientID;
+	GameServer()->SendBroadcast("", aPlayers[ClientID].m_Bomb); // clear previous broadcast
+	aPlayers[ClientID].m_Bomb = true;
+	aPlayers[ClientID].m_Tick = 1 * SERVER_TICK_SPEED;
 
-	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "'%s' is the new bomb!", Server()->ClientName(m_Bomb.m_ClientID));
-	GameServer()->SendBroadcast(aBuf, ClientID);
+	//char aBuf[128];
+	//str_format(aBuf, sizeof(aBuf), "'%s' is the new bomb!", Server()->ClientName(m_Bomb.m_ClientID));
+/*	for(int i = 0; i < MAX_CLIENTS; i++)
+		if(aPlayers[i].m_State == STATE_ALIVE)
+			GameServer()->SendBroadcast(aBuf, i);*/
+
 
 	GameServer()->SendBroadcast("You are the new bomb!\nHit another player before the time runs out!", ClientID);
 	SetSkins();
@@ -237,14 +245,16 @@ bool CGameControllerBomb::CanJoinTeam(int Team, int NotThisID)
 
 void CGameControllerBomb::OnHammerHit(int ClientID, int TargetID)
 {
-	if(ClientID == m_Bomb.m_ClientID)
-		MakeBomb(TargetID);
-	else if(TargetID == m_Bomb.m_ClientID)
+	if(aPlayers[ClientID].m_Bomb && !aPlayers[TargetID].m_Bomb)
 	{
-		m_Bomb.m_Tick -= SERVER_TICK_SPEED;
+		aPlayers[ClientID].m_Bomb = false;
+		MakeBomb(TargetID);
+	}
+	else if(aPlayers[TargetID].m_Bomb && !aPlayers[ClientID].m_Bomb)
+	{
+		aPlayers[TargetID].m_Bomb -= SERVER_TICK_SPEED;
 		UpdateTimer();
 	}
-
 	else
 		GameServer()->m_apPlayers[TargetID]->GetCharacter()->Freeze(1);
 
@@ -256,36 +266,42 @@ void CGameControllerBomb::DoWinCheck()
 	if(!m_RoundActive)
 		return;
 
-	// check if bomb as left
-
-
 	if(AmountOfPlayers(STATE_ALIVE) <= 1)
 	{
 		m_RoundActive = false;
 		GameServer()->m_World.m_Paused = true;
 		m_GameOverTick = Server()->Tick();
-		m_Bomb.m_ClientID = -1;
 		DoWarmup(3);
 		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
 			if(aPlayers[i].m_State == STATE_ALIVE)
+			{
 				aPlayers[i].m_State = STATE_ACTIVE;
+				aPlayers[i].m_Bomb = false;
+			}
+		}
 	}
 
-	if(m_Bomb.m_Tick <= 0 || aPlayers[m_Bomb.m_ClientID].m_State <= STATE_SPECTATING)
+	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if(AmountOfPlayers(STATE_ALIVE) > 2)
-			EndBombRound(false);
-		else
-			EndBombRound(true);
+		if(AmountOfBombs() == 0)
+		{
+			if(AmountOfPlayers(STATE_ALIVE) >= 2)
+				EndBombRound(false);
+			else
+				EndBombRound(true);
+		}
+		if(aPlayers[i].m_Bomb)
+		{
+			if(aPlayers[i].m_Tick % SERVER_TICK_SPEED == 0)
+				UpdateTimer();
+			if(aPlayers[i].m_Tick <= 0)
+			{
+				ExplodeBomb(i);
+			}
+			aPlayers[i].m_Tick--;
+		}
 	}
-	else
-	{
-		if(m_Bomb.m_Tick % SERVER_TICK_SPEED == 0)
-			UpdateTimer();
-
-		m_Bomb.m_Tick--;
-	}
-
 	// Move killed players to spectator
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
@@ -311,26 +327,31 @@ int CGameControllerBomb::AmountOfPlayers(int State = STATE_ACTIVE)
 	return Amount;
 }
 
+int CGameControllerBomb::AmountOfBombs()
+{
+	int Amount = 0;
+	for(int i = 0; i < MAX_CLIENTS; i++)
+		if(aPlayers[i].m_Bomb)
+			Amount++;
+	return Amount;
+}
+
 void CGameControllerBomb::EndBombRound(bool RealEnd)
 {
+	int alive = 0;
+	for(int i = 0; i < MAX_CLIENTS; i++)
+		if(aPlayers[i].m_State == STATE_ALIVE && !aPlayers[i].m_Bomb)
+			alive++;
+
 	if(!RealEnd)
 	{
-		GameServer()->SendBroadcast("BOOM!", -1);
-		GameServer()->CreateExplosion(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, m_Bomb.m_ClientID, WEAPON_GAME, false, 0);
-		GameServer()->CreateSound(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, SOUND_GRENADE_EXPLODE);
-		GameServer()->m_apPlayers[m_Bomb.m_ClientID]->KillCharacter();
-
-		char aBuf[128];
-		str_format(aBuf, sizeof(aBuf), "'%s' eliminated!", Server()->ClientName(m_Bomb.m_ClientID));
-		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf, -1, CGameContext::CHAT_SIX);
-
-		MakeRandomBomb();
+		MakeRandomBomb(std::ceil(alive/8.0f));
 	}
 	else
 	{
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
-			if(aPlayers[i].m_State == STATE_ALIVE && i != m_Bomb.m_ClientID)
+			if(aPlayers[i].m_State == STATE_ALIVE && !aPlayers[i].m_Bomb)
 			{
 				char aBuf[128];
 				str_format(aBuf, sizeof(aBuf), "'%s' won the round!", Server()->ClientName(i));
@@ -340,46 +361,64 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 				break;
 			}
 		}
-		if(aPlayers[m_Bomb.m_ClientID].m_State <= STATE_SPECTATING && GameServer()->m_apPlayers[m_Bomb.m_ClientID])
-		{
-			GameServer()->SendBroadcast("BOOM!", -1);
-			GameServer()->CreateExplosion(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, m_Bomb.m_ClientID, WEAPON_GAME, false, 0);
-			GameServer()->CreateSound(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, SOUND_GRENADE_EXPLODE);
-			GameServer()->m_apPlayers[m_Bomb.m_ClientID]->KillCharacter();
-		}
-		else
-		{
-			GameServer()->SendBroadcast("Bomb left the game!", -1);
-		}
+		
 		EndRound();
 		DoWarmup(3);
 		m_RoundActive = false;
-		m_Bomb.m_ClientID = -1;
 		EndRound();
 		DoWarmup(3);
 		for(int i = 0; i < MAX_CLIENTS; i++)
 			if(aPlayers[i].m_State == STATE_ALIVE)
+			{
 				aPlayers[i].m_State = STATE_ACTIVE;
+				aPlayers[i].m_Bomb = false;
+			}
+				
 	}
+}
+
+void CGameControllerBomb::ExplodeBomb(int ClientID)
+{
+	GameServer()->SendBroadcast("BOOM!", -1);
+	GameServer()->CreateExplosion(GameServer()->m_apPlayers[ClientID]->m_ViewPos, ClientID, WEAPON_GAME, false, 0);
+	GameServer()->CreateSound(GameServer()->m_apPlayers[ClientID]->m_ViewPos, SOUND_GRENADE_EXPLODE);
+	GameServer()->m_apPlayers[ClientID]->KillCharacter();
+
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "'%s' eliminated!", Server()->ClientName(ClientID));
+	GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf, -1, CGameContext::CHAT_SIX);
+
+	aPlayers[ClientID].m_Bomb = false;
+	aPlayers[ClientID].m_State = STATE_ACTIVE;
 }
 
 void CGameControllerBomb::StartBombRound()
 {
+	int players = 0;
 	m_RoundActive = true;
 	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
 		if(aPlayers[i].m_State == STATE_ACTIVE)
 		{
 			GameServer()->m_apPlayers[i]->SetTeam(TEAM_FLOCK, true);
 			aPlayers[i].m_State = STATE_ALIVE;
+			players++;
 		}
-
-	MakeRandomBomb();
+	}
+	MakeRandomBomb(std::ceil(players/8.0f));
 }
 
 void CGameControllerBomb::UpdateTimer()
 {
 	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
 		if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetCharacter())
-			GameServer()->m_apPlayers[i]->GetCharacter()->SetArmor(m_Bomb.m_Tick / SERVER_TICK_SPEED);
-	GameServer()->CreateDamageInd(GameServer()->m_apPlayers[m_Bomb.m_ClientID]->m_ViewPos, 0, m_Bomb.m_Tick / SERVER_TICK_SPEED);
+		{
+			if(aPlayers[i].m_Bomb)
+			{
+				GameServer()->CreateDamageInd(GameServer()->m_apPlayers[i]->m_ViewPos, 0, aPlayers[i].m_Tick / SERVER_TICK_SPEED);
+				GameServer()->m_apPlayers[i]->GetCharacter()->SetArmor(aPlayers[i].m_Tick / SERVER_TICK_SPEED);
+			}
+		}
+	}
 }
