@@ -65,7 +65,7 @@ public:
 	void SetSkins();
 	void SetSkin(class CPlayer *pPlayer);
 	void MakeRandomBomb(int Count);
-	void MakeBomb(int ClientID);
+	void MakeBomb(int ClientID, int Ticks);
 	void DoWinCheck();
 	int AmountOfPlayers(int State);
 	int AmountOfBombs();

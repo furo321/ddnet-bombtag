@@ -205,15 +205,15 @@ void CGameControllerBomb::MakeRandomBomb(int Count)
 
 	for(int i = 0; i < Count; i++)
 	{
-		MakeBomb(Playing[i]);
+		MakeBomb(Playing[i], g_Config.m_BombtagSecondsToExplosion * SERVER_TICK_SPEED);
 	}
 }
 
-void CGameControllerBomb::MakeBomb(int ClientID)
+void CGameControllerBomb::MakeBomb(int ClientID, int Ticks)
 {
 	GameServer()->SendBroadcast("", aPlayers[ClientID].m_Bomb); // clear previous broadcast
 	aPlayers[ClientID].m_Bomb = true;
-	aPlayers[ClientID].m_Tick = g_Config.m_BombtagSecondsToExplosion * SERVER_TICK_SPEED;
+	aPlayers[ClientID].m_Tick = Ticks;
 
 	//char aBuf[128];
 	//str_format(aBuf, sizeof(aBuf), "'%s' is the new bomb!", Server()->ClientName(m_Bomb.m_ClientID));
@@ -252,7 +252,7 @@ void CGameControllerBomb::OnHammerHit(int ClientID, int TargetID)
 	if(aPlayers[ClientID].m_Bomb && !aPlayers[TargetID].m_Bomb)
 	{
 		aPlayers[ClientID].m_Bomb = false;
-		MakeBomb(TargetID);
+		MakeBomb(TargetID, aPlayers[ClientID].m_Tick);
 	}
 	else if(!aPlayers[ClientID].m_Bomb && aPlayers[TargetID].m_Bomb)
 	{
