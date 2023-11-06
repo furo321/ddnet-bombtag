@@ -24,7 +24,6 @@ CGameControllerBomb::CGameControllerBomb(class CGameContext *pGameServer) :
 		aPlayers[i].m_State = STATE_NONE;
 		aPlayers[i].m_Bomb = false;
 	}
-		
 
 	InitTeleporter();
 }
@@ -199,7 +198,7 @@ void CGameControllerBomb::MakeRandomBomb(int Count)
 
 	std::random_device rd;
 	std::mt19937 g(rd());
-	std::shuffle(Playing, Playing+Players, g);
+	std::shuffle(Playing, Playing + Players, g);
 
 	for(int i = 0; i < Count; i++)
 	{
@@ -215,10 +214,9 @@ void CGameControllerBomb::MakeBomb(int ClientID, int Ticks)
 
 	//char aBuf[128];
 	//str_format(aBuf, sizeof(aBuf), "'%s' is the new bomb!", Server()->ClientName(m_Bomb.m_ClientID));
-/*	for(int i = 0; i < MAX_CLIENTS; i++)
+	/*	for(int i = 0; i < MAX_CLIENTS; i++)
 		if(aPlayers[i].m_State == STATE_ALIVE)
 			GameServer()->SendBroadcast(aBuf, i);*/
-
 
 	GameServer()->SendBroadcast("You are the new bomb!\nHit another player before the time runs out!", ClientID);
 	SetSkins();
@@ -355,7 +353,7 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 				GameServer()->m_apPlayers[i]->m_Score = aPlayers[i].m_Score;
 			}
 		}
-		MakeRandomBomb(std::ceil(alive/(float)g_Config.m_BombtagBombsPerPlayer));
+		MakeRandomBomb(std::ceil(alive / (float)g_Config.m_BombtagBombsPerPlayer));
 	}
 	else
 	{
@@ -371,7 +369,7 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 				break;
 			}
 		}
-		
+
 		EndRound();
 		DoWarmup(3);
 		m_RoundActive = false;
@@ -383,7 +381,6 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 				aPlayers[i].m_State = STATE_ACTIVE;
 				aPlayers[i].m_Bomb = false;
 			}
-				
 	}
 }
 
@@ -414,7 +411,7 @@ void CGameControllerBomb::StartBombRound()
 			players++;
 		}
 	}
-	MakeRandomBomb(std::ceil(players/(float)g_Config.m_BombtagBombsPerPlayer));
+	MakeRandomBomb(std::ceil(players / (float)g_Config.m_BombtagBombsPerPlayer));
 }
 
 void CGameControllerBomb::UpdateTimer()
