@@ -2535,10 +2535,12 @@ void CGameContext::OnChangeInfoNetMessage(const CNetMsg_Cl_ChangeInfo *pMsg, int
 		SixupNeedsUpdate = true;
 	Server()->SetClientCountry(ClientID, pMsg->m_Country);
 
+	/* Bombtag doesn't allow skinchange.
 	str_copy(pPlayer->m_TeeInfos.m_aSkinName, pMsg->m_pSkin, sizeof(pPlayer->m_TeeInfos.m_aSkinName));
 	pPlayer->m_TeeInfos.m_UseCustomColor = pMsg->m_UseCustomColor;
 	pPlayer->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
 	pPlayer->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
+	*/
 	if(!Server()->IsSixup(ClientID))
 		pPlayer->m_TeeInfos.ToSixup();
 
@@ -2558,12 +2560,14 @@ void CGameContext::OnChangeInfoNetMessage(const CNetMsg_Cl_ChangeInfo *pMsg, int
 		Info.m_Silent = true;
 		Info.m_Team = pPlayer->GetTeam();
 
+		/* Bombtag doesn't allow skinchange.
 		for(int p = 0; p < 6; p++)
 		{
 			Info.m_apSkinPartNames[p] = pPlayer->m_TeeInfos.m_apSkinPartNames[p];
 			Info.m_aSkinPartColors[p] = pPlayer->m_TeeInfos.m_aSkinPartColors[p];
 			Info.m_aUseCustomColors[p] = pPlayer->m_TeeInfos.m_aUseCustomColors[p];
 		}
+		*/
 
 		for(int i = 0; i < Server()->MaxClients(); i++)
 		{
@@ -2580,9 +2584,11 @@ void CGameContext::OnChangeInfoNetMessage(const CNetMsg_Cl_ChangeInfo *pMsg, int
 		Msg.m_ClientID = ClientID;
 		for(int p = 0; p < 6; p++)
 		{
+			/* Bombtag doesn't allow skinchange.
 			Msg.m_apSkinPartNames[p] = pPlayer->m_TeeInfos.m_apSkinPartNames[p];
 			Msg.m_aSkinPartColors[p] = pPlayer->m_TeeInfos.m_aSkinPartColors[p];
 			Msg.m_aUseCustomColors[p] = pPlayer->m_TeeInfos.m_aUseCustomColors[p];
+			*/
 		}
 
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, -1);
