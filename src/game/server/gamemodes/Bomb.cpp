@@ -152,13 +152,11 @@ void CGameControllerBomb::InitTeleporter()
 		{
 			if(Type == TILE_TELEOUT)
 			{
-				m_TeleOuts[Number - 1].push_back(
-					vec2(i % Width * 32 + 16, i / Width * 32 + 16));
+				m_TeleOuts[Number - 1].emplace_back(i % Width * 32.0f + 16.0f, i / Width * 32.0f + 16.0f);
 			}
 			else if(Type == TILE_TELECHECKOUT)
 			{
-				m_TeleCheckOuts[Number - 1].push_back(
-					vec2(i % Width * 32 + 16, i / Width * 32 + 16));
+				m_TeleCheckOuts[Number - 1].emplace_back(i % Width * 32.0f + 16.0f, i / Width * 32.0f + 16.0f);
 			}
 		}
 	}
