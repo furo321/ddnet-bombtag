@@ -264,18 +264,14 @@ void CGraphics_Threaded::LinesDraw(const CLineItem *pArray, int Num)
 
 IGraphics::CTextureHandle CGraphics_Threaded::FindFreeTextureIndex()
 {
-	int Tex = m_FirstFreeTexture;
-	if(Tex == -1)
+	const size_t CurSize = m_vTextureIndices.size();
+	if(m_FirstFreeTexture == CurSize)
 	{
-		const size_t CurSize = m_vTextureIndices.size();
 		m_vTextureIndices.resize(CurSize * 2);
-		for(size_t i = 0; i < CurSize - 1; ++i)
-		{
+		for(size_t i = 0; i < CurSize; ++i)
 			m_vTextureIndices[CurSize + i] = CurSize + i + 1;
-		}
-		m_vTextureIndices.back() = -1;
-		Tex = CurSize;
 	}
+	const size_t Tex = m_FirstFreeTexture;
 	m_FirstFreeTexture = m_vTextureIndices[Tex];
 	m_vTextureIndices[Tex] = -1;
 	return CreateTextureHandle(Tex);
@@ -284,6 +280,8 @@ IGraphics::CTextureHandle CGraphics_Threaded::FindFreeTextureIndex()
 void CGraphics_Threaded::FreeTextureIndex(CTextureHandle *pIndex)
 {
 	dbg_assert(pIndex->IsValid(), "Cannot free invalid texture index");
+	dbg_assert(m_vTextureIndices[pIndex->Id()] == -1, "Cannot free already freed texture index");
+
 	m_vTextureIndices[pIndex->Id()] = m_FirstFreeTexture;
 	m_FirstFreeTexture = pIndex->Id();
 	pIndex->Invalidate();
@@ -291,7 +289,7 @@ void CGraphics_Threaded::FreeTextureIndex(CTextureHandle *pIndex)
 
 int CGraphics_Threaded::UnloadTexture(CTextureHandle *pIndex)
 {
-	if(pIndex->Id() == m_InvalidTexture.Id())
+	if(pIndex->Id() == m_NullTexture.Id())
 		return 0;
 
 	if(!pIndex->IsValid())
@@ -370,21 +368,10 @@ IGraphics::CTextureHandle CGraphics_Threaded::LoadSpriteTextureImpl(CImageInfo &
 	const size_t PixelSize = FromImageInfo.PixelSize();
 	m_vSpriteHelper.resize(w * h * PixelSize);
 	CopyTextureFromTextureBufferSub(m_vSpriteHelper.data(), w, h, (uint8_t *)FromImageInfo.m_pData, FromImageInfo.m_Width, FromImageInfo.m_Height, PixelSize, x, y, w, h);
-	return LoadTextureRaw(w, h, FromImageInfo.m_Format, m_vSpriteHelper.data(), FromImageInfo.m_Format, 0);
+	return LoadTextureRaw(w, h, FromImageInfo.m_Format, m_vSpriteHelper.data(), 0);
 }
 
 IGraphics::CTextureHandle CGraphics_Threaded::LoadSpriteTexture(CImageInfo &FromImageInfo, CDataSprite *pSprite)
-{
-	int imggx = FromImageInfo.m_Width / pSprite->m_pSet->m_Gridx;
-	int imggy = FromImageInfo.m_Height / pSprite->m_pSet->m_Gridy;
-	int x = pSprite->m_X * imggx;
-	int y = pSprite->m_Y * imggy;
-	int w = pSprite->m_W * imggx;
-	int h = pSprite->m_H * imggy;
-	return LoadSpriteTextureImpl(FromImageInfo, x, y, w, h);
-}
-
-IGraphics::CTextureHandle CGraphics_Threaded::LoadSpriteTexture(CImageInfo &FromImageInfo, client_data7::CDataSprite *pSprite)
 {
 	int imggx = FromImageInfo.m_Width / pSprite->m_pSet->m_Gridx;
 	int imggy = FromImageInfo.m_Height / pSprite->m_pSet->m_Gridy;
@@ -416,7 +403,7 @@ bool CGraphics_Threaded::IsImageSubFullyTransparent(CImageInfo &FromImageInfo, i
 	return false;
 }
 
-bool CGraphics_Threaded::IsSpriteTextureFullyTransparent(CImageInfo &FromImageInfo, client_data7::CDataSprite *pSprite)
+bool CGraphics_Threaded::IsSpriteTextureFullyTransparent(CImageInfo &FromImageInfo, CDataSprite *pSprite)
 {
 	int imggx = FromImageInfo.m_Width / pSprite->m_pSet->m_Gridx;
 	int imggy = FromImageInfo.m_Height / pSprite->m_pSet->m_Gridy;
@@ -430,12 +417,6 @@ bool CGraphics_Threaded::IsSpriteTextureFullyTransparent(CImageInfo &FromImageIn
 
 IGraphics::CTextureHandle CGraphics_Threaded::LoadTextureRaw(size_t Width, size_t Height, CImageInfo::EImageFormat Format, const void *pData, int Flags, const char *pTexName)
 {
-	// don't waste memory on texture if we are stress testing
-#ifdef CONF_DEBUG
-	if(g_Config.m_DbgStress && m_InvalidTexture.IsValid())
-		return m_InvalidTexture;
-#endif
-
 	if((Flags & IGraphics::TEXLOAD_TO_2D_ARRAY_TEXTURE) != 0 || (Flags & IGraphics::TEXLOAD_TO_3D_TEXTURE) != 0)
 	{
 		if(Width == 0 || (Width % 16) != 0 || Height == 0 || (Height % 16) != 0)
@@ -501,19 +482,22 @@ IGraphics::CTextureHandle CGraphics_Threaded::LoadTexture(const char *pFilename,
 	CImageInfo Img;
 	if(LoadPNG(&Img, pFilename, StorageType))
 	{
-		IGraphics::CTextureHandle ID = LoadTextureRaw(Img.m_Width, Img.m_Height, Img.m_Format, Img.m_pData, Flags, pFilename);
-		free(Img.m_pData);
-		if(ID.Id() != m_InvalidTexture.Id() && g_Config.m_Debug)
-			dbg_msg("graphics/texture", "loaded %s", pFilename);
-		return ID;
+		CTextureHandle ID = LoadTextureRaw(Img.m_Width, Img.m_Height, Img.m_Format, Img.m_pData, Flags, pFilename);
+		FreePNG(&Img);
+		if(ID.IsValid())
+		{
+			if(g_Config.m_Debug)
+				dbg_msg("graphics/texture", "loaded %s", pFilename);
+			return ID;
+		}
 	}
 
-	return m_InvalidTexture;
+	return m_NullTexture;
 }
 
-IGraphics::CTextureHandle CGraphics_Threaded::InvalidTexture() const
+IGraphics::CTextureHandle CGraphics_Threaded::NullTexture() const
 {
-	return m_InvalidTexture;
+	return m_NullTexture;
 }
 
 bool CGraphics_Threaded::LoadTextTextures(size_t Width, size_t Height, CTextureHandle &TextTexture, CTextureHandle &TextOutlineTexture, void *pTextData, void *pTextOutlineData)
@@ -797,7 +781,7 @@ public:
 		str_copy(m_aName, pName);
 	}
 
-	virtual ~CScreenshotSaveJob()
+	~CScreenshotSaveJob() override
 	{
 		free(m_pData);
 	}
@@ -2598,9 +2582,8 @@ int CGraphics_Threaded::Init()
 	// init textures
 	m_FirstFreeTexture = 0;
 	m_vTextureIndices.resize(CCommandBuffer::MAX_TEXTURES);
-	for(size_t i = 0; i < m_vTextureIndices.size() - 1; ++i)
+	for(size_t i = 0; i < m_vTextureIndices.size(); ++i)
 		m_vTextureIndices[i] = i + 1;
-	m_vTextureIndices.back() = -1;
 
 	m_FirstFreeVertexArrayInfo = -1;
 	m_FirstFreeBufferObjectIndex = -1;
@@ -2629,27 +2612,28 @@ int CGraphics_Threaded::Init()
 		const unsigned char aGreen[] = {0x00, 0xff, 0x00, 0xff};
 		const unsigned char aBlue[] = {0x00, 0x00, 0xff, 0xff};
 		const unsigned char aYellow[] = {0xff, 0xff, 0x00, 0xff};
-		constexpr size_t InvalidTextureDimension = 16;
-		unsigned char aNullTextureData[InvalidTextureDimension * InvalidTextureDimension * PixelSize];
-		for(size_t y = 0; y < InvalidTextureDimension; ++y)
+		constexpr size_t NullTextureDimension = 16;
+		unsigned char aNullTextureData[NullTextureDimension * NullTextureDimension * PixelSize];
+		for(size_t y = 0; y < NullTextureDimension; ++y)
 		{
-			for(size_t x = 0; x < InvalidTextureDimension; ++x)
+			for(size_t x = 0; x < NullTextureDimension; ++x)
 			{
 				const unsigned char *pColor;
-				if(x < InvalidTextureDimension / 2 && y < InvalidTextureDimension / 2)
+				if(x < NullTextureDimension / 2 && y < NullTextureDimension / 2)
 					pColor = aRed;
-				else if(x >= InvalidTextureDimension / 2 && y < InvalidTextureDimension / 2)
+				else if(x >= NullTextureDimension / 2 && y < NullTextureDimension / 2)
 					pColor = aGreen;
-				else if(x < InvalidTextureDimension / 2 && y >= InvalidTextureDimension / 2)
+				else if(x < NullTextureDimension / 2 && y >= NullTextureDimension / 2)
 					pColor = aBlue;
 				else
 					pColor = aYellow;
-				mem_copy(&aNullTextureData[(y * InvalidTextureDimension + x) * PixelSize], pColor, PixelSize);
+				mem_copy(&aNullTextureData[(y * NullTextureDimension + x) * PixelSize], pColor, PixelSize);
 			}
 		}
 		const int TextureLoadFlags = HasTextureArrays() ? IGraphics::TEXLOAD_TO_2D_ARRAY_TEXTURE : IGraphics::TEXLOAD_TO_3D_TEXTURE;
-		m_InvalidTexture.Invalidate();
-		m_InvalidTexture = LoadTextureRaw(InvalidTextureDimension, InvalidTextureDimension, CImageInfo::FORMAT_RGBA, aNullTextureData, TextureLoadFlags);
+		m_NullTexture.Invalidate();
+		m_NullTexture = LoadTextureRaw(NullTextureDimension, NullTextureDimension, CImageInfo::FORMAT_RGBA, aNullTextureData, TextureLoadFlags);
+		dbg_assert(m_NullTexture.IsNullTexture(), "Null texture invalid");
 	}
 
 	ColorRGBA GPUInfoPrintColor{0.6f, 0.5f, 1.0f, 1.0f};

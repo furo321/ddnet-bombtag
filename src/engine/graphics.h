@@ -228,10 +228,6 @@ typedef STWGraphicGPU TTWGraphicsGPUList;
 typedef std::function<void()> WINDOW_RESIZE_FUNC;
 typedef std::function<void()> WINDOW_PROPS_CHANGED_FUNC;
 
-namespace client_data7 {
-struct CDataSprite; // NOLINT(bugprone-forward-declaration-namespace)
-}
-
 typedef std::function<bool(uint32_t &Width, uint32_t &Height, CImageInfo::EImageFormat &Format, std::vector<uint8_t> &vDstData)> TGLBackendReadPresentedImageData;
 
 class IGraphics : public IInterface
@@ -267,6 +263,7 @@ public:
 		}
 
 		bool IsValid() const { return Id() >= 0; }
+		bool IsNullTexture() const { return Id() == 0; }
 		int Id() const { return m_Id; }
 		void Invalidate() { m_Id = -1; }
 	};
@@ -341,7 +338,7 @@ public:
 	virtual CTextureHandle LoadTextureRaw(size_t Width, size_t Height, CImageInfo::EImageFormat Format, const void *pData, int Flags, const char *pTexName = nullptr) = 0;
 	virtual int LoadTextureRawSub(CTextureHandle TextureID, int x, int y, size_t Width, size_t Height, CImageInfo::EImageFormat Format, const void *pData) = 0;
 	virtual CTextureHandle LoadTexture(const char *pFilename, int StorageType, int Flags = 0) = 0;
-	virtual CTextureHandle InvalidTexture() const = 0;
+	virtual CTextureHandle NullTexture() const = 0;
 	virtual void TextureSet(CTextureHandle Texture) = 0;
 	void TextureClear() { TextureSet(CTextureHandle()); }
 
@@ -351,10 +348,9 @@ public:
 	virtual bool UpdateTextTexture(CTextureHandle TextureID, int x, int y, size_t Width, size_t Height, const void *pData) = 0;
 
 	virtual CTextureHandle LoadSpriteTexture(CImageInfo &FromImageInfo, struct CDataSprite *pSprite) = 0;
-	virtual CTextureHandle LoadSpriteTexture(CImageInfo &FromImageInfo, struct client_data7::CDataSprite *pSprite) = 0;
 
 	virtual bool IsImageSubFullyTransparent(CImageInfo &FromImageInfo, int x, int y, int w, int h) = 0;
-	virtual bool IsSpriteTextureFullyTransparent(CImageInfo &FromImageInfo, struct client_data7::CDataSprite *pSprite) = 0;
+	virtual bool IsSpriteTextureFullyTransparent(CImageInfo &FromImageInfo, struct CDataSprite *pSprite) = 0;
 
 	virtual void FlushVertices(bool KeepVertices = false) = 0;
 	virtual void FlushVerticesTex3D() = 0;
