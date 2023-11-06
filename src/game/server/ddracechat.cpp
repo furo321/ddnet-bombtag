@@ -1557,7 +1557,7 @@ void CGameContext::ConLastTele(IConsole::IResult *pResult, void *pUserData)
 	if(!pChr)
 		return;
 
-	CGameTeams &Teams = ((CGameControllerDDRace *)pSelf->m_pController)->m_Teams;
+	CGameTeams &Teams = ((CGameControllerBomb *)pSelf->m_pController)->m_Teams;
 	int Team = Teams.m_Core.Team(pResult->m_ClientID);
 	if(!Teams.IsPractice(Team))
 	{
