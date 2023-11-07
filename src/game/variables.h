@@ -227,5 +227,3 @@ MACRO_CONFIG_INT(DbgDummies, dbg_dummies, 0, 0, MAX_CLIENTS, CFGFLAG_SERVER, "(D
 MACRO_CONFIG_INT(DbgTuning, dbg_tuning, 0, 0, 2, CFGFLAG_CLIENT, "Display information about the tuning parameters that affect the own player (0 = off, 1 = show changed, 2 = show all)")
 
 #endif
-
-#include "server/gamemodes/bomb_config_variables.h"

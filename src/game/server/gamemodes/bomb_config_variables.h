@@ -1,5 +1,6 @@
 #ifndef GAME_SERVER_GAMEMODES_BOMB_CONFIG_VARIABLES_H
 #define GAME_SERVER_GAMEMODES_BOMB_CONFIG_VARIABLES_H
+#undef GAME_SERVER_GAMEMODES_BOMB_CONFIG_VARIABLES_H
 
 // def, min, max
 MACRO_CONFIG_INT(BombtagBombsPerPlayer, bombtag_bombs_per_player, 6, 1, 64, CFGFLAG_SERVER, "The amount of bombs that should spawn per X alive players.")
