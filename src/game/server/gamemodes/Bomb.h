@@ -1,6 +1,6 @@
 /* (c) Shereef Marzouk. See "licence DDRace.txt" and the readme.txt in the root of the distribution for more information. */
-#ifndef GAME_SERVER_GAMEMODES_DDRACE_H
-#define GAME_SERVER_GAMEMODES_DDRACE_H
+#ifndef GAME_SERVER_GAMEMODES_BOMB_H
+#define GAME_SERVER_GAMEMODES_BOMB_H
 
 #include <game/server/gamecontroller.h>
 #include <game/server/teams.h>
@@ -76,4 +76,4 @@ public:
 
 	void OnHammerHit(int ClientID, int TargetID) override;
 };
-#endif // GAME_SERVER_GAMEMODES_DDRACE_H
+#endif // GAME_SERVER_GAMEMODES_BOMB_H
