@@ -19,10 +19,10 @@ CGameControllerBomb::CGameControllerBomb(class CGameContext *pGameServer) :
 {
 	m_pGameType = GAME_TYPE_NAME;
 	m_RoundActive = false;
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for(auto &aPlayer : aPlayers)
 	{
-		aPlayers[i].m_State = STATE_NONE;
-		aPlayers[i].m_Bomb = false;
+		aPlayer.m_State = STATE_NONE;
+		aPlayer.m_Bomb = false;
 	}
 
 	InitTeleporter();
@@ -43,12 +43,12 @@ void CGameControllerBomb::OnCharacterSpawn(CCharacter *pChr)
 	SetSkin(pChr->GetPlayer());
 }
 
-int CGameControllerBomb::OnCharacterDeath(CCharacter *pChr, CPlayer *pKiller, int Weapon)
+int CGameControllerBomb::OnCharacterDeath(CCharacter *pVictim, CPlayer *pKiller, int Weapon)
 {
-	if(aPlayers[pChr->GetPlayer()->GetCID()].m_State >= STATE_ACTIVE && m_RoundActive)
+	if(aPlayers[pVictim->GetPlayer()->GetCID()].m_State >= STATE_ACTIVE && m_RoundActive)
 	{
-		GameServer()->SendBroadcast("You will automatically rejoin the game when the round is over", pChr->GetPlayer()->GetCID());
-		aPlayers[pChr->GetPlayer()->GetCID()].m_State = STATE_ACTIVE;
+		GameServer()->SendBroadcast("You will automatically rejoin the game when the round is over", pVictim->GetPlayer()->GetCID());
+		aPlayers[pVictim->GetPlayer()->GetCID()].m_State = STATE_ACTIVE;
 	}
 	return 0;
 }
@@ -101,12 +101,12 @@ void CGameControllerBomb::Tick()
 	IGameController::Tick();
 	if(AmountOfPlayers(STATE_ACTIVE) == 1 && !m_RoundActive)
 	{
-		int seq = m_Tick % (SERVER_TICK_SPEED * 3);
-		if(seq == 50)
+		int Sequence = m_Tick % (SERVER_TICK_SPEED * 3);
+		if(Sequence == 50)
 			GameServer()->SendBroadcast("Waiting for players.", -1);
-		else if(seq == 100)
+		else if(Sequence == 100)
 			GameServer()->SendBroadcast("Waiting for players..", -1);
-		else if(seq == 0)
+		else if(Sequence == 0)
 			GameServer()->SendBroadcast("Waiting for players...", -1);
 	}
 	if(!m_RoundActive && AmountOfPlayers(STATE_ACTIVE) + AmountOfPlayers(STATE_ALIVE) > 1 && !m_Warmup)
@@ -272,12 +272,12 @@ void CGameControllerBomb::DoWinCheck()
 		GameServer()->m_World.m_Paused = true;
 		m_GameOverTick = Server()->Tick();
 		DoWarmup(3);
-		for(int i = 0; i < MAX_CLIENTS; i++)
+		for(auto &aPlayer : aPlayers)
 		{
-			if(aPlayers[i].m_State == STATE_ALIVE)
+			if(aPlayer.m_State == STATE_ALIVE)
 			{
-				aPlayers[i].m_State = STATE_ACTIVE;
-				aPlayers[i].m_Bomb = false;
+				aPlayer.m_State = STATE_ACTIVE;
+				aPlayer.m_Bomb = false;
 			}
 		}
 	}
@@ -321,8 +321,8 @@ void CGameControllerBomb::DoWinCheck()
 int CGameControllerBomb::AmountOfPlayers(int State = STATE_ACTIVE)
 {
 	int Amount = 0;
-	for(int i = 0; i < MAX_CLIENTS; i++)
-		if(aPlayers[i].m_State == State)
+	for(auto &aPlayer : aPlayers)
+		if(aPlayer.m_State == State)
 			Amount++;
 	return Amount;
 }
@@ -330,18 +330,18 @@ int CGameControllerBomb::AmountOfPlayers(int State = STATE_ACTIVE)
 int CGameControllerBomb::AmountOfBombs()
 {
 	int Amount = 0;
-	for(int i = 0; i < MAX_CLIENTS; i++)
-		if(aPlayers[i].m_Bomb)
+	for(auto &aPlayer : aPlayers)
+		if(aPlayer.m_Bomb)
 			Amount++;
 	return Amount;
 }
 
 void CGameControllerBomb::EndBombRound(bool RealEnd)
 {
-	int alive = 0;
-	for(int i = 0; i < MAX_CLIENTS; i++)
-		if(aPlayers[i].m_State == STATE_ALIVE && !aPlayers[i].m_Bomb)
-			alive++;
+	int Alive = 0;
+	for(auto &aPlayer : aPlayers)
+		if(aPlayer.m_State == STATE_ALIVE && !aPlayer.m_Bomb)
+			Alive++;
 
 	if(!RealEnd)
 	{
@@ -353,7 +353,7 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 				GameServer()->m_apPlayers[i]->m_Score = aPlayers[i].m_Score;
 			}
 		}
-		MakeRandomBomb(std::ceil(alive / (float)g_Config.m_BombtagBombsPerPlayer));
+		MakeRandomBomb(std::ceil(Alive / (float)g_Config.m_BombtagBombsPerPlayer));
 	}
 	else
 	{
@@ -375,12 +375,14 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 		m_RoundActive = false;
 		EndRound();
 		DoWarmup(3);
-		for(int i = 0; i < MAX_CLIENTS; i++)
-			if(aPlayers[i].m_State == STATE_ALIVE)
+		for(auto &aPlayer : aPlayers)
+		{
+			if(aPlayer.m_State == STATE_ALIVE)
 			{
-				aPlayers[i].m_State = STATE_ACTIVE;
-				aPlayers[i].m_Bomb = false;
+				aPlayer.m_State = STATE_ACTIVE;
+				aPlayer.m_Bomb = false;
 			}
+		}
 	}
 }
 
