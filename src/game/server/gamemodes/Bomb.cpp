@@ -248,6 +248,7 @@ void CGameControllerBomb::DoWinCheck()
 
 	if(AmountOfPlayers(STATE_ALIVE) <= 1)
 	{
+		EndBombRound(true);
 		m_RoundActive = false;
 		GameServer()->m_World.m_Paused = true;
 		m_GameOverTick = Server()->Tick();
@@ -339,7 +340,7 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 	{
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
-			if(m_aPlayers[i].m_State == STATE_ALIVE && !m_aPlayers[i].m_Bomb)
+			if(m_aPlayers[i].m_State == STATE_ALIVE)
 			{
 				char aBuf[128];
 				str_format(aBuf, sizeof(aBuf), "'%s' won the round!", Server()->ClientName(i));
