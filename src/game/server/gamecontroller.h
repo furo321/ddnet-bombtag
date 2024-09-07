@@ -154,6 +154,10 @@ public:
 	float m_CurrentRecord;
 	CGameTeams &Teams() { return m_Teams; }
 	std::shared_ptr<CScoreLoadBestTimeResult> m_pLoadBestTimeResult;
+
+	// Bombtag
+	virtual void OnSkinChange(const char *pSkin, bool UseCustomColor, int ColorBody, int ColorFeet, int ClientId);
+	virtual void OnHammerHit(int ClientId, int TargetId);
 };
 
 #endif

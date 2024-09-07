@@ -2054,6 +2054,7 @@ set_src(ENGINE_INTERFACE GLOB src/engine
 set_src(ENGINE_SHARED GLOB_RECURSE src/engine/shared
   assertion_logger.cpp
   assertion_logger.h
+  bomb_config_variables.h
   compression.cpp
   compression.h
   config.cpp
@@ -2726,6 +2727,8 @@ if(SERVER)
     gamecontext.h
     gamecontroller.cpp
     gamecontroller.h
+    gamemodes/Bomb.cpp
+    gamemodes/Bomb.h
     gamemodes/DDRace.cpp
     gamemodes/DDRace.h
     gamemodes/mod.cpp

@@ -1200,7 +1200,7 @@ void CServer::SendCapabilities(int ClientId)
 {
 	CMsgPacker Msg(NETMSG_CAPABILITIES, true);
 	Msg.AddInt(SERVERCAP_CURVERSION); // version
-	Msg.AddInt(SERVERCAPFLAG_DDNET | SERVERCAPFLAG_CHATTIMEOUTCODE | SERVERCAPFLAG_ANYPLAYERFLAG | SERVERCAPFLAG_PINGEX | SERVERCAPFLAG_ALLOWDUMMY | SERVERCAPFLAG_SYNCWEAPONINPUT); // flags
+	Msg.AddInt(SERVERCAPFLAG_DDNET | SERVERCAPFLAG_ANYPLAYERFLAG | SERVERCAPFLAG_PINGEX | SERVERCAPFLAG_ALLOWDUMMY | SERVERCAPFLAG_SYNCWEAPONINPUT); // flags
 	SendMsg(&Msg, MSGFLAG_VITAL, ClientId);
 }
 
@@ -2352,7 +2352,7 @@ void CServer::UpdateRegisterServerInfo()
 	JsonWriter.WriteStrValue(GameServer()->Version());
 
 	JsonWriter.WriteAttribute("client_score_kind");
-	JsonWriter.WriteStrValue("time"); // "points" or "time"
+	JsonWriter.WriteStrValue("points"); // "points" or "time"
 
 	JsonWriter.WriteAttribute("requires_login");
 	JsonWriter.WriteBoolValue(false);
@@ -2376,7 +2376,7 @@ void CServer::UpdateRegisterServerInfo()
 			JsonWriter.WriteIntValue(m_aClients[i].m_Country);
 
 			JsonWriter.WriteAttribute("score");
-			JsonWriter.WriteIntValue(m_aClients[i].m_Score.value_or(-9999));
+			JsonWriter.WriteIntValue(m_aClients[i].m_Score.value_or(0));
 
 			JsonWriter.WriteAttribute("is_player");
 			JsonWriter.WriteBoolValue(GameServer()->IsClientPlayer(i));

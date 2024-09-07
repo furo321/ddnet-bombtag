@@ -614,7 +614,7 @@ void IGameController::Snap(int SnappingClient)
 		return;
 
 	pGameInfoEx->m_Flags =
-		GAMEINFOFLAG_TIMESCORE |
+		//GAMEINFOFLAG_TIMESCORE |
 		GAMEINFOFLAG_GAMETYPE_RACE |
 		GAMEINFOFLAG_GAMETYPE_DDRACE |
 		GAMEINFOFLAG_GAMETYPE_DDNET |
@@ -631,7 +631,7 @@ void IGameController::Snap(int SnappingClient)
 		GAMEINFOFLAG_ENTITIES_DDRACE |
 		GAMEINFOFLAG_ENTITIES_RACE |
 		GAMEINFOFLAG_RACE;
-	pGameInfoEx->m_Flags2 = GAMEINFOFLAG2_HUD_DDRACE;
+	pGameInfoEx->m_Flags2 = GAMEINFOFLAG2_HUD_HEALTH_ARMOR;
 	if(g_Config.m_SvNoWeakHook)
 		pGameInfoEx->m_Flags2 |= GAMEINFOFLAG2_NO_WEAK_HOOK;
 	pGameInfoEx->m_Version = GAMEINFO_CURVERSION;
@@ -750,4 +750,20 @@ void IGameController::DoTeamChange(CPlayer *pPlayer, int Team, bool DoChatMsg)
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
 	// OnPlayerInfoChange(pPlayer);
+}
+
+void IGameController::OnHammerHit(int ClientId, int TargetId)
+{
+}
+
+void IGameController::OnSkinChange(const char *pSkin, bool UseCustomColor, int ColorBody, int ColorFeet, int ClientId)
+{
+	CPlayer *pPlayer = GameServer()->m_apPlayers[ClientId];
+
+	str_copy(pPlayer->m_TeeInfos.m_aSkinName, pSkin, sizeof(pPlayer->m_TeeInfos.m_aSkinName));
+	pPlayer->m_TeeInfos.m_UseCustomColor = UseCustomColor;
+	pPlayer->m_TeeInfos.m_ColorBody = ColorBody;
+	pPlayer->m_TeeInfos.m_ColorFeet = ColorFeet;
+	if(!Server()->IsSixup(ClientId))
+		pPlayer->m_TeeInfos.ToSixup();
 }

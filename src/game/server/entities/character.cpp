@@ -511,6 +511,8 @@ void CCharacter::FireWeapon()
 				pTarget->Freeze();
 
 			Antibot()->OnHammerHit(m_pPlayer->GetCid(), pTarget->GetPlayer()->GetCid());
+			// Bombtag
+			GameServer()->m_pController->OnHammerHit(m_pPlayer->GetCid(), pTarget->GetPlayer()->GetCid());
 
 			Hits++;
 		}
