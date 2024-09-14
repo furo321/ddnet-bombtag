@@ -68,7 +68,7 @@ public:
 	void EliminatePlayer(int ClientId);
 	void UpdateTimer();
 
-	void OnHammerHit(int ClientId, int TargetId) override;
+	void OnTakeDamage(int Dmg, int From, int To, int Weapon) override;
 	void OnSkinChange(const char *pSkin, bool UseCustomColor, int ColorBody, int ColorFeet, int ClientId) override;
 };
 #endif // GAME_SERVER_GAMEMODES_BOMB_H

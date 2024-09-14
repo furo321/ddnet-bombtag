@@ -505,15 +505,12 @@ void CCharacter::FireWeapon()
 			Temp -= pTarget->m_Core.m_Vel;
 			pTarget->TakeDamage((vec2(0.f, -1.0f) + Temp) * Strength, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
 				m_pPlayer->GetCid(), m_Core.m_ActiveWeapon);
-			pTarget->UnFreeze();
+			//pTarget->UnFreeze();
 
 			if(m_FreezeHammer)
 				pTarget->Freeze();
 
 			Antibot()->OnHammerHit(m_pPlayer->GetCid(), pTarget->GetPlayer()->GetCid());
-			// Bombtag
-			GameServer()->m_pController->OnHammerHit(m_pPlayer->GetCid(), pTarget->GetPlayer()->GetCid());
-
 			Hits++;
 		}
 
@@ -989,6 +986,8 @@ void CCharacter::Die(int Killer, int Weapon, bool SendKillMsg)
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
+	GameServer()->m_pController->OnTakeDamage(Dmg, From, m_pPlayer->GetCid(), Weapon);
+
 	if(Dmg)
 	{
 		SetEmote(EMOTE_PAIN, Server()->Tick() + 500 * Server()->TickSpeed() / 1000);

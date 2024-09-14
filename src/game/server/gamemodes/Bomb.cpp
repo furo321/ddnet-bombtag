@@ -1,5 +1,6 @@
 #include "Bomb.h"
 #include "base/color.h"
+#include "engine/shared/config.h"
 #include "engine/shared/protocol.h"
 #include "game/gamecore.h"
 #include "game/generated/protocol.h"
@@ -29,14 +30,19 @@ CGameControllerBomb::~CGameControllerBomb() = default;
 
 void CGameControllerBomb::OnCharacterSpawn(CCharacter *pChr)
 {
+	int ClientId = pChr->GetPlayer()->GetCid();
 	IGameController::OnCharacterSpawn(pChr);
 	pChr->SetTeams(&m_Teams);
 	//pChr->SetTeleports(&m_TeleOuts, &m_TeleCheckOuts);
-	m_Teams.OnCharacterSpawn(pChr->GetPlayer()->GetCid());
+	m_Teams.OnCharacterSpawn(ClientId);
 
 	pChr->SetArmor(10);
 	pChr->GiveWeapon(WEAPON_GUN, true);
 	pChr->SetWeapon(WEAPON_HAMMER);
+
+	if(m_aPlayers[ClientId].m_Bomb && m_RoundActive)
+		MakeBomb(ClientId, m_aPlayers[ClientId].m_Tick);
+
 	if(m_RoundActive)
 		SetSkin(pChr->GetPlayer());
 }
@@ -185,6 +191,16 @@ void CGameControllerBomb::MakeBomb(int ClientId, int Ticks)
 	m_aPlayers[ClientId].m_Bomb = true;
 	m_aPlayers[ClientId].m_Tick = Ticks;
 
+	CCharacter *pChr = GameServer()->m_apPlayers[ClientId]->GetCharacter();
+	if(pChr)
+	{
+		if(g_Config.m_BombtagBombWeapon != WEAPON_HAMMER)
+			pChr->GiveWeapon(WEAPON_HAMMER, true);
+
+		pChr->GiveWeapon(g_Config.m_BombtagBombWeapon);
+		pChr->SetWeapon(g_Config.m_BombtagBombWeapon);
+	}
+
 	GameServer()->SendBroadcast("You are the new bomb!\nHit another player before the time runs out!", ClientId);
 }
 
@@ -219,25 +235,50 @@ bool CGameControllerBomb::CanJoinTeam(int Team, int NotThisId, char *pErrorReaso
 	}
 }
 
-void CGameControllerBomb::OnHammerHit(int ClientId, int TargetId)
+void CGameControllerBomb::OnTakeDamage(int Dmg, int From, int To, int Weapon)
 {
-	if(m_aPlayers[ClientId].m_Bomb && !m_aPlayers[TargetId].m_Bomb)
+	if(From == To)
+		return;
+
+	if(Weapon < 0)
+		return;
+
+	if(Weapon != WEAPON_HAMMER && !m_aPlayers[From].m_Bomb)
+		return;
+
+	if(m_aPlayers[From].m_Bomb && !m_aPlayers[To].m_Bomb)
 	{
-		m_aPlayers[ClientId].m_Bomb = false;
-		MakeBomb(TargetId, m_aPlayers[ClientId].m_Tick);
+		// new bomb
+		GameServer()->SendBroadcast("", From);
+		m_aPlayers[From].m_Bomb = false;
+		MakeBomb(To, m_aPlayers[From].m_Tick);
+
+		CCharacter *pOldBombChr = GameServer()->m_apPlayers[From]->GetCharacter();
+		CCharacter *pNewBombChr = GameServer()->m_apPlayers[To]->GetCharacter();
+
+		if(pOldBombChr && pNewBombChr)
+		{
+			pOldBombChr->GiveWeapon(g_Config.m_BombtagBombWeapon, true);
+			pOldBombChr->GiveWeapon(WEAPON_HAMMER, true);
+			pOldBombChr->SetWeapon(WEAPON_HAMMER);
+
+			pNewBombChr->GiveWeapon(g_Config.m_BombtagBombWeapon, false);
+			pNewBombChr->SetWeapon(g_Config.m_BombtagBombWeapon);
+		}
 	}
-	else if(!m_aPlayers[ClientId].m_Bomb && m_aPlayers[TargetId].m_Bomb)
+	else if(!m_aPlayers[From].m_Bomb && m_aPlayers[To].m_Bomb)
 	{
-		m_aPlayers[TargetId].m_Tick -= g_Config.m_BombtagBombDamage * SERVER_TICK_SPEED;
+		// damage to bomb
+		m_aPlayers[To].m_Tick -= g_Config.m_BombtagBombDamage * SERVER_TICK_SPEED;
 		UpdateTimer();
 	}
-	else if(!m_aPlayers[ClientId].m_Bomb && !m_aPlayers[TargetId].m_Bomb && g_Config.m_BombtagHammerFreeze)
+	else if(!m_aPlayers[From].m_Bomb && !m_aPlayers[To].m_Bomb && g_Config.m_BombtagHammerFreeze)
 	{
-		CCharacterCore NewCore = GameServer()->m_apPlayers[TargetId]->GetCharacter()->GetCore();
+		CCharacterCore NewCore = GameServer()->m_apPlayers[To]->GetCharacter()->GetCore();
 		NewCore.m_FreezeEnd = Server()->Tick() + g_Config.m_BombtagHammerFreeze;
 		NewCore.m_FreezeStart = Server()->Tick();
-		GameServer()->m_apPlayers[TargetId]->GetCharacter()->m_FreezeTime = g_Config.m_BombtagHammerFreeze;
-		GameServer()->m_apPlayers[TargetId]->GetCharacter()->SetCore(NewCore);
+		GameServer()->m_apPlayers[To]->GetCharacter()->m_FreezeTime = g_Config.m_BombtagHammerFreeze;
+		GameServer()->m_apPlayers[To]->GetCharacter()->SetCore(NewCore);
 	}
 }
 
@@ -369,7 +410,7 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 
 void CGameControllerBomb::ExplodeBomb(int ClientId)
 {
-	GameServer()->CreateExplosion(GameServer()->m_apPlayers[ClientId]->m_ViewPos, ClientId, WEAPON_GAME, false, 0);
+	GameServer()->CreateExplosion(GameServer()->m_apPlayers[ClientId]->m_ViewPos, ClientId, WEAPON_GAME, true, 0);
 	GameServer()->CreateSound(GameServer()->m_apPlayers[ClientId]->m_ViewPos, SOUND_GRENADE_EXPLODE);
 	m_aPlayers[ClientId].m_State = STATE_ACTIVE;
 	GameServer()->m_apPlayers[ClientId]->KillCharacter();
