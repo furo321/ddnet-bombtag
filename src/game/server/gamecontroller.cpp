@@ -752,7 +752,7 @@ void IGameController::DoTeamChange(CPlayer *pPlayer, int Team, bool DoChatMsg)
 	// OnPlayerInfoChange(pPlayer);
 }
 
-void IGameController::OnHammerHit(int ClientId, int TargetId)
+void IGameController::OnTakeDamage(int Dmg, int From, int To, int Weapon)
 {
 }
 
