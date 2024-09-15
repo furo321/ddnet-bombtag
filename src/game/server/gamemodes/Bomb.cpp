@@ -137,7 +137,7 @@ int CGameControllerBomb::GetPlayerTeam(int ClientId) const
 void CGameControllerBomb::SetSkins()
 {
 	for(auto &pPlayer : GameServer()->m_apPlayers)
-		if(pPlayer && pPlayer->GetTeam() != TEAM_SPECTATORS)
+		if(pPlayer)
 			SetSkin(pPlayer);
 }
 
