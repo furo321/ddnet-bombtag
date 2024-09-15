@@ -116,6 +116,22 @@ void CGameControllerBomb::Tick()
 	DoWinCheck();
 	if(m_RoundActive)
 		SetSkins();
+
+	for(auto &pPlayer : GameServer()->m_apPlayers)
+	{
+		if(!pPlayer)
+			continue;
+
+		if(m_aPlayers[pPlayer->GetCid()].m_Bomb)
+			continue;
+
+		CCharacter *pChr = pPlayer->GetCharacter();
+		if(!pChr)
+			continue;
+
+		pChr->GiveWeapon(WEAPON_HAMMER);
+		pChr->GiveWeapon(WEAPON_GUN, true);
+	}
 }
 
 void CGameControllerBomb::DoTeamChange(class CPlayer *pPlayer, int Team, bool DoChatMsg)
@@ -224,6 +240,7 @@ bool CGameControllerBomb::CanJoinTeam(int Team, int NotThisId, char *pErrorReaso
 	if(Team == TEAM_SPECTATORS)
 	{
 		m_aPlayers[NotThisId].m_State = STATE_SPECTATING;
+		m_aPlayers[NotThisId].m_Bomb = false;
 		str_copy(pErrorReason, "You are a spectator now\nYou won't join when a new round begins", ErrorReasonSize);
 		return true;
 	}
@@ -244,6 +261,9 @@ void CGameControllerBomb::OnTakeDamage(int Dmg, int From, int To, int Weapon)
 		return;
 
 	if(Weapon != WEAPON_HAMMER && !m_aPlayers[From].m_Bomb)
+		return;
+
+	if(m_aPlayers[From].m_Bomb && Weapon != g_Config.m_BombtagBombWeapon)
 		return;
 
 	if(m_aPlayers[From].m_Bomb && !m_aPlayers[To].m_Bomb)
