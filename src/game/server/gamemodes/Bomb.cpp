@@ -93,6 +93,17 @@ void CGameControllerBomb::OnReset()
 {
 	IGameController::OnReset();
 	m_Teams.Reset();
+
+	// Bombtag reset
+	for(auto &aPlayer : m_aPlayers)
+	{
+		if(aPlayer.m_State == STATE_ALIVE)
+		{
+			aPlayer.m_State = STATE_ACTIVE;
+			aPlayer.m_Bomb = false;
+		}
+		m_RoundActive = false;
+	}
 }
 
 void CGameControllerBomb::Tick()
