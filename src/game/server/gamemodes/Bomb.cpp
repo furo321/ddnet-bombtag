@@ -305,11 +305,15 @@ void CGameControllerBomb::OnTakeDamage(int Dmg, int From, int To, int Weapon)
 	}
 	else if(!m_aPlayers[From].m_Bomb && !m_aPlayers[To].m_Bomb && g_Config.m_BombtagHammerFreeze)
 	{
-		CCharacterCore NewCore = GameServer()->m_apPlayers[To]->GetCharacter()->GetCore();
+		CCharacter *pChr = GameServer()->m_apPlayers[To]->GetCharacter();
+		if(pChr)
+			return;
+
+		CCharacterCore NewCore = pChr->GetCore();
 		NewCore.m_FreezeEnd = Server()->Tick() + g_Config.m_BombtagHammerFreeze;
 		NewCore.m_FreezeStart = Server()->Tick();
-		GameServer()->m_apPlayers[To]->GetCharacter()->m_FreezeTime = g_Config.m_BombtagHammerFreeze;
-		GameServer()->m_apPlayers[To]->GetCharacter()->SetCore(NewCore);
+		pChr->m_FreezeTime = g_Config.m_BombtagHammerFreeze;
+		pChr->SetCore(NewCore);
 	}
 }
 
