@@ -67,6 +67,7 @@ void CGameControllerBomb::OnPlayerConnect(CPlayer *pPlayer)
 {
 	IGameController::OnPlayerConnect(pPlayer);
 	int ClientId = pPlayer->GetCid();
+	m_aPlayers[ClientId].m_State = STATE_ACTIVE;
 
 	if(!Server()->ClientPrevIngame(ClientId))
 	{
