@@ -41,10 +41,10 @@ public:
 	class CSkinInfo
 	{
 	public:
-		char m_aSkinName[24];
-		int m_aSkinFeetColor;
-		int m_aSkinBodyColor;
-		bool m_UseCustomColor;
+		char m_aSkinName[24] = "default";
+		int m_aSkinFeetColor = 0;
+		int m_aSkinBodyColor = 0;
+		bool m_UseCustomColor = false;
 	};
 	struct
 	{
