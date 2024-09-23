@@ -1655,7 +1655,17 @@ bool CGameContext::OnClientDataPersist(int ClientId, void *pData)
 	{
 		return false;
 	}
-	pPersistent->m_IsSpectator = m_apPlayers[ClientId]->GetTeam() == TEAM_SPECTATORS;
+
+	if(!str_comp(Config()->m_SvGametype, "bomb"))
+	{
+		CGameControllerBomb *pController = (CGameControllerBomb *)m_pController;
+		if(pController->m_aPlayers[ClientId].m_State == CGameControllerBomb::STATE_SPECTATING)
+			pPersistent->m_IsSpectator = true;
+		else
+			pPersistent->m_IsSpectator = false;
+	}
+	else
+		pPersistent->m_IsSpectator = m_apPlayers[ClientId]->GetTeam() == TEAM_SPECTATORS;
 	pPersistent->m_IsAfk = m_apPlayers[ClientId]->IsAfk();
 	return true;
 }
@@ -3918,8 +3928,6 @@ void CGameContext::OnInit(const void *pPersistentData)
 			Switcher.m_Initial = true;
 	}
 
-	Console()->ExecuteFile(g_Config.m_SvResetFile, -1);
-
 	LoadMapSettings();
 
 	m_MapBugs.Dump();
@@ -3945,6 +3953,8 @@ void CGameContext::OnInit(const void *pPersistentData)
 		m_pController = new CGameControllerBomb(this);
 	else
 		m_pController = new CGameControllerDDRace(this);
+
+	Console()->ExecuteFile(g_Config.m_SvResetFile, -1);
 
 	ReadCensorList();
 

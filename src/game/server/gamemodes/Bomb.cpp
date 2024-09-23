@@ -67,7 +67,9 @@ void CGameControllerBomb::OnPlayerConnect(CPlayer *pPlayer)
 {
 	IGameController::OnPlayerConnect(pPlayer);
 	int ClientId = pPlayer->GetCid();
-	m_aPlayers[ClientId].m_State = STATE_ACTIVE;
+
+	if(pPlayer->GetTeam() == TEAM_SPECTATORS)
+		m_aPlayers[ClientId].m_State = STATE_SPECTATING;
 
 	if(!Server()->ClientPrevIngame(ClientId))
 	{
@@ -77,7 +79,7 @@ void CGameControllerBomb::OnPlayerConnect(CPlayer *pPlayer)
 		GameServer()->SendChatTarget(ClientId, "BOMB Mod. Source code: https://github.com/furo321/ddnet-bombtag");
 	}
 	m_aPlayers[pPlayer->GetCid()].m_Score = 0;
-	if(m_RoundActive)
+	if(m_RoundActive && m_aPlayers[ClientId].m_State != STATE_SPECTATING)
 	{
 		GameServer()->SendBroadcast("There's currently a game in progress, you'll join once the round is over!", ClientId);
 	}
@@ -98,7 +100,7 @@ void CGameControllerBomb::OnReset()
 	// Bombtag reset
 	for(auto &aPlayer : m_aPlayers)
 	{
-		if(aPlayer.m_State == STATE_ALIVE)
+		if(aPlayer.m_State >= STATE_ACTIVE)
 		{
 			aPlayer.m_State = STATE_ACTIVE;
 			aPlayer.m_Bomb = false;
@@ -307,7 +309,7 @@ void CGameControllerBomb::OnTakeDamage(int Dmg, int From, int To, int Weapon)
 	else if(!m_aPlayers[From].m_Bomb && !m_aPlayers[To].m_Bomb && g_Config.m_BombtagHammerFreeze)
 	{
 		CCharacter *pChr = GameServer()->m_apPlayers[To]->GetCharacter();
-		if(pChr)
+		if(!pChr)
 			return;
 
 		CCharacterCore NewCore = pChr->GetCore();
