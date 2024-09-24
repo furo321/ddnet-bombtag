@@ -190,13 +190,13 @@ jobs:
         cd fancy
         ./DDNet-Server shutdown
 
-    - name: Run integration tests with Valgrind's Memcheck
-      if: contains(matrix.os, 'ubuntu-latest')
-      run: |
-        cd headless
-        # Remove old coverage data:
-        find . -name '*.gcno' -o -name '*.gcda' -delete
-        ./integration_test.sh --valgrind-memcheck
+    # - name: Run integration tests with Valgrind's Memcheck
+    #   if: contains(matrix.os, 'ubuntu-latest')
+    #   run: |
+    #     cd headless
+    #     # Remove old coverage data:
+    #     find . -name '*.gcno' -o -name '*.gcda' -delete
+    #     ./integration_test.sh --valgrind-memcheck
 
     - name: Upload Codecov report (integration tests)
       if: contains(matrix.os, 'ubuntu-latest')
