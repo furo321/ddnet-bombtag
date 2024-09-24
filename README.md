@@ -7,6 +7,7 @@ This mod is pretty much an enchanced version of the original mod from [SomeRunce
 - Based on DDNet!
 - 64 players support
 - Ability to have multiple bombs
+- Ability to use a different weapon than hammer for bomb
 - 0.6 ~~and 0.7~~ support
 - Configurable gameplay
 
