@@ -68,7 +68,7 @@ void CGameControllerBomb::OnPlayerConnect(CPlayer *pPlayer)
 	IGameController::OnPlayerConnect(pPlayer);
 	int ClientId = pPlayer->GetCid();
 
-	if(pPlayer->GetTeam() == TEAM_SPECTATORS)
+	if(pPlayer->GetTeam() == TEAM_SPECTATORS && m_aPlayers[ClientId].m_State != STATE_ACTIVE)
 		m_aPlayers[ClientId].m_State = STATE_SPECTATING;
 
 	if(!Server()->ClientPrevIngame(ClientId))
