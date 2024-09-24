@@ -3619,6 +3619,31 @@ void CGameContext::ConchainSettingUpdate(IConsole::IResult *pResult, void *pUser
 	}
 }
 
+void CGameContext::ConchainBombWeapon(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	if(pResult->NumArguments())
+	{
+		CGameContext *pSelf = (CGameContext *)pUserData;
+		CGameControllerBomb *pController = (CGameControllerBomb *)pSelf->m_pController;
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(pController->m_aPlayers[i].m_State != CGameControllerBomb::STATE_ALIVE)
+				continue;
+			if(!pController->m_aPlayers[i].m_Bomb)
+				continue;
+
+			CCharacter *pChr = pSelf->m_apPlayers[i]->GetCharacter();
+			if(!pChr)
+				continue;
+
+			pChr->GiveWeapon(g_Config.m_BombtagBombWeapon, true);
+			pChr->GiveWeapon(pResult->GetInteger(0));
+			pChr->SetActiveWeapon(pResult->GetInteger(0));
+		}
+	}
+	pfnCallback(pResult, pCallbackUserData);
+}
+
 void CGameContext::OnConsoleInit()
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
@@ -3671,6 +3696,12 @@ void CGameContext::OnConsoleInit()
 
 	RegisterDDRaceCommands();
 	RegisterChatCommands();
+	RegisterBombCommands();
+}
+
+void CGameContext::RegisterBombCommands()
+{
+	Console()->Chain("bombtag_bomb_weapon", ConchainBombWeapon, this);
 }
 
 void CGameContext::RegisterDDRaceCommands()

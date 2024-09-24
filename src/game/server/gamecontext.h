@@ -138,6 +138,7 @@ class CGameContext : public IGameServer
 	static void ConAntibot(IConsole::IResult *pResult, void *pUserData);
 	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainSettingUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	static void ConchainBombWeapon(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConDumpLog(IConsole::IResult *pResult, void *pUserData);
 
 	void Construct(int Resetting);
@@ -286,6 +287,7 @@ public:
 	// engine events
 	void OnInit(const void *pPersistentData) override;
 	void OnConsoleInit() override;
+	void RegisterBombCommands();
 	void RegisterDDRaceCommands();
 	void RegisterChatCommands();
 	void OnMapChange(char *pNewMapName, int MapNameSize) override;
