@@ -40,7 +40,7 @@ float CConsole::CResult::GetFloat(unsigned Index) const
 	return str_tofloat(m_apArgs[Index]);
 }
 
-std::optional<ColorHSLA> CConsole::CResult::GetColor(unsigned Index, bool Light) const
+std::optional<ColorHSLA> CConsole::CResult::GetColor(unsigned Index, float DarkestLighting) const
 {
 	if(Index >= m_NumArgs)
 		return std::nullopt;
@@ -51,10 +51,7 @@ std::optional<ColorHSLA> CConsole::CResult::GetColor(unsigned Index, bool Light)
 		unsigned long Value = str_toulong_base(pStr, 10);
 		if(Value == std::numeric_limits<unsigned long>::max())
 			return std::nullopt;
-		const ColorHSLA Hsla = ColorHSLA(Value, true);
-		if(Light)
-			return Hsla.UnclampLighting();
-		return Hsla;
+		return ColorHSLA(Value, true).UnclampLighting(DarkestLighting);
 	}
 	else if(*pStr == '$') // Hex RGB/RGBA
 	{
@@ -341,7 +338,7 @@ void CConsole::Print(int Level, const char *pFrom, const char *pStr, ColorRGBA P
 {
 	LEVEL LogLevel = IConsole::ToLogLevel(Level);
 	// if console colors are not enabled or if the color is pure white, use default terminal color
-	if(g_Config.m_ConsoleEnableColors && mem_comp(&PrintColor, &gs_ConsoleDefaultColor, sizeof(ColorRGBA)) != 0)
+	if(g_Config.m_ConsoleEnableColors && PrintColor != gs_ConsoleDefaultColor)
 	{
 		log_log_color(LogLevel, ColorToLogColor(PrintColor), pFrom, "%s", pStr);
 	}

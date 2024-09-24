@@ -738,6 +738,54 @@ std::pair<int, int> CEditor::EnvGetSelectedTimeAndValue() const
 	return std::pair<int, int>{CurrentTime, CurrentValue};
 }
 
+void CEditor::SelectNextLayer()
+{
+	int CurrentLayer = 0;
+	for(const auto &Selected : m_vSelectedLayers)
+		CurrentLayer = maximum(Selected, CurrentLayer);
+	SelectLayer(CurrentLayer);
+
+	if(m_vSelectedLayers[0] < (int)m_Map.m_vpGroups[m_SelectedGroup]->m_vpLayers.size() - 1)
+	{
+		SelectLayer(m_vSelectedLayers[0] + 1);
+	}
+	else
+	{
+		for(size_t Group = m_SelectedGroup + 1; Group < m_Map.m_vpGroups.size(); Group++)
+		{
+			if(!m_Map.m_vpGroups[Group]->m_vpLayers.empty())
+			{
+				SelectLayer(0, Group);
+				break;
+			}
+		}
+	}
+}
+
+void CEditor::SelectPreviousLayer()
+{
+	int CurrentLayer = std::numeric_limits<int>::max();
+	for(const auto &Selected : m_vSelectedLayers)
+		CurrentLayer = minimum(Selected, CurrentLayer);
+	SelectLayer(CurrentLayer);
+
+	if(m_vSelectedLayers[0] > 0)
+	{
+		SelectLayer(m_vSelectedLayers[0] - 1);
+	}
+	else
+	{
+		for(int Group = m_SelectedGroup - 1; Group >= 0; Group--)
+		{
+			if(!m_Map.m_vpGroups[Group]->m_vpLayers.empty())
+			{
+				SelectLayer(m_Map.m_vpGroups[Group]->m_vpLayers.size() - 1, Group);
+				break;
+			}
+		}
+	}
+}
+
 bool CEditor::CallbackOpenMap(const char *pFileName, int StorageType, void *pUser)
 {
 	CEditor *pEditor = (CEditor *)pUser;
@@ -850,41 +898,14 @@ bool CEditor::CallbackSaveImage(const char *pFileName, int StorageType, void *pU
 
 	std::shared_ptr<CEditorImage> pImg = pEditor->m_Map.m_vpImages[pEditor->m_SelectedImage];
 
-	EImageFormat OutputFormat;
-	switch(pImg->m_Format)
+	if(CImageLoader::SavePng(pEditor->Storage()->OpenFile(pFileName, IOFLAG_WRITE, StorageType), pFileName, *pImg))
 	{
-	case CImageInfo::FORMAT_RGB:
-		OutputFormat = IMAGE_FORMAT_RGB;
-		break;
-	case CImageInfo::FORMAT_RGBA:
-		OutputFormat = IMAGE_FORMAT_RGBA;
-		break;
-	case CImageInfo::FORMAT_SINGLE_COMPONENT:
-		OutputFormat = IMAGE_FORMAT_R;
-		break;
-	default:
-		dbg_assert(false, "Image has invalid format.");
-		return false;
-	};
-
-	TImageByteBuffer ByteBuffer;
-	SImageByteBuffer ImageByteBuffer(&ByteBuffer);
-	if(SavePng(OutputFormat, pImg->m_pData, ImageByteBuffer, pImg->m_Width, pImg->m_Height))
-	{
-		IOHANDLE File = pEditor->Storage()->OpenFile(pFileName, IOFLAG_WRITE, StorageType);
-		if(File)
-		{
-			io_write(File, &ByteBuffer.front(), ByteBuffer.size());
-			io_close(File);
-			pEditor->m_Dialog = DIALOG_NONE;
-			return true;
-		}
-		pEditor->ShowFileDialogError("Failed to open file '%s'.", pFileName);
-		return false;
+		pEditor->m_Dialog = DIALOG_NONE;
+		return true;
 	}
 	else
 	{
-		pEditor->ShowFileDialogError("Failed to write image to file.");
+		pEditor->ShowFileDialogError("Failed to write image to file '%s'.", pFileName);
 		return false;
 	}
 }
@@ -1320,39 +1341,23 @@ void CEditor::DoToolbarLayers(CUIRect ToolBar)
 		{
 			TB_Bottom.VSplitLeft(60.0f, &Button, &TB_Bottom);
 
-			bool Invoked = false;
-			static int s_AddItemButton = 0;
-
 			if(pLayer->m_Type == LAYERTYPE_QUADS)
 			{
-				Invoked = DoButton_Editor(&s_AddItemButton, "Add Quad", 0, &Button, 0, "[ctrl+q] Add a new quad") ||
-					  (m_Dialog == DIALOG_NONE && CLineInput::GetActiveInput() == nullptr && Input()->KeyPress(KEY_Q) && ModPressed);
+				if(DoButton_Editor(&m_QuickActionAddQuad, m_QuickActionAddQuad.Label(), 0, &Button, 0, m_QuickActionAddQuad.Description()) ||
+					(m_Dialog == DIALOG_NONE && CLineInput::GetActiveInput() == nullptr && Input()->KeyPress(KEY_Q) && ModPressed))
+				{
+					m_QuickActionAddQuad.Call();
+				}
 			}
 			else if(pLayer->m_Type == LAYERTYPE_SOUNDS)
 			{
-				Invoked = DoButton_Editor(&s_AddItemButton, "Add Sound", 0, &Button, 0, "[ctrl+q] Add a new sound source") ||
-					  (m_Dialog == DIALOG_NONE && CLineInput::GetActiveInput() == nullptr && Input()->KeyPress(KEY_Q) && ModPressed);
-			}
-
-			if(Invoked)
-			{
-				std::shared_ptr<CLayerGroup> pGroup = GetSelectedGroup();
-
-				float aMapping[4];
-				pGroup->Mapping(aMapping);
-				int x = aMapping[0] + (aMapping[2] - aMapping[0]) / 2;
-				int y = aMapping[1] + (aMapping[3] - aMapping[1]) / 2;
-				if(m_Dialog == DIALOG_NONE && CLineInput::GetActiveInput() == nullptr && Input()->KeyPress(KEY_Q) && ModPressed)
+				if(DoButton_Editor(&m_QuickActionAddSound, m_QuickActionAddSound.Label(), 0, &Button, 0, m_QuickActionAddSound.Description()) ||
+					(m_Dialog == DIALOG_NONE && CLineInput::GetActiveInput() == nullptr && Input()->KeyPress(KEY_Q) && ModPressed))
 				{
-					x += Ui()->MouseWorldX() - (MapView()->GetWorldOffset().x * pGroup->m_ParallaxX / 100) - pGroup->m_OffsetX;
-					y += Ui()->MouseWorldY() - (MapView()->GetWorldOffset().y * pGroup->m_ParallaxY / 100) - pGroup->m_OffsetY;
+					m_QuickActionAddSound.Call();
 				}
-
-				if(pLayer->m_Type == LAYERTYPE_QUADS)
-					m_EditorHistory.Execute(std::make_shared<CEditorActionNewEmptyQuad>(this, m_SelectedGroup, m_vSelectedLayers[0], x, y));
-				else if(pLayer->m_Type == LAYERTYPE_SOUNDS)
-					m_EditorHistory.Execute(std::make_shared<CEditorActionNewEmptySound>(this, m_SelectedGroup, m_vSelectedLayers[0], x, y));
 			}
+
 			TB_Bottom.VSplitLeft(5.0f, &Button, &TB_Bottom);
 		}
 
@@ -3250,11 +3255,11 @@ void CEditor::DoMapEditor(CUIRect View)
 									std::shared_ptr<CLayerTiles> pBrushLayer = std::static_pointer_cast<CLayerTiles>(m_pBrush->m_vpLayers[BrushIndex]);
 
 									if(pLayer->m_Tele <= pBrushLayer->m_Tele && pLayer->m_Speedup <= pBrushLayer->m_Speedup && pLayer->m_Front <= pBrushLayer->m_Front && pLayer->m_Game <= pBrushLayer->m_Game && pLayer->m_Switch <= pBrushLayer->m_Switch && pLayer->m_Tune <= pBrushLayer->m_Tune)
-										pLayer->BrushDraw(pBrushLayer, wx, wy);
+										pLayer->BrushDraw(pBrushLayer, vec2(wx, wy));
 								}
 								else
 								{
-									apEditLayers[k].second->BrushDraw(m_pBrush->m_vpLayers[BrushIndex], wx, wy);
+									apEditLayers[k].second->BrushDraw(m_pBrush->m_vpLayers[BrushIndex], vec2(wx, wy));
 								}
 							}
 						}
@@ -3347,7 +3352,7 @@ void CEditor::DoMapEditor(CUIRect View)
 								BrushIndex = 0;
 
 							if(apEditLayers[k].second->m_Type == m_pBrush->m_vpLayers[BrushIndex]->m_Type)
-								apEditLayers[k].second->BrushPlace(m_pBrush->m_vpLayers[BrushIndex], wx, wy);
+								apEditLayers[k].second->BrushPlace(m_pBrush->m_vpLayers[BrushIndex], vec2(wx, wy));
 						}
 					}
 
@@ -4238,26 +4243,7 @@ void CEditor::RenderLayers(CUIRect LayersBox)
 		}
 		else
 		{
-			int CurrentLayer = 0;
-			for(const auto &Selected : m_vSelectedLayers)
-				CurrentLayer = maximum(Selected, CurrentLayer);
-			SelectLayer(CurrentLayer);
-
-			if(m_vSelectedLayers[0] < (int)m_Map.m_vpGroups[m_SelectedGroup]->m_vpLayers.size() - 1)
-			{
-				SelectLayer(m_vSelectedLayers[0] + 1);
-			}
-			else
-			{
-				for(size_t Group = m_SelectedGroup + 1; Group < m_Map.m_vpGroups.size(); Group++)
-				{
-					if(!m_Map.m_vpGroups[Group]->m_vpLayers.empty())
-					{
-						SelectLayer(0, Group);
-						break;
-					}
-				}
-			}
+			SelectNextLayer();
 		}
 		s_ScrollToSelectionNext = true;
 	}
@@ -4270,27 +4256,9 @@ void CEditor::RenderLayers(CUIRect LayersBox)
 		}
 		else
 		{
-			int CurrentLayer = std::numeric_limits<int>::max();
-			for(const auto &Selected : m_vSelectedLayers)
-				CurrentLayer = minimum(Selected, CurrentLayer);
-			SelectLayer(CurrentLayer);
-
-			if(m_vSelectedLayers[0] > 0)
-			{
-				SelectLayer(m_vSelectedLayers[0] - 1);
-			}
-			else
-			{
-				for(int Group = m_SelectedGroup - 1; Group >= 0; Group--)
-				{
-					if(!m_Map.m_vpGroups[Group]->m_vpLayers.empty())
-					{
-						SelectLayer(m_Map.m_vpGroups[Group]->m_vpLayers.size() - 1, Group);
-						break;
-					}
-				}
-			}
+			SelectPreviousLayer();
 		}
+
 		s_ScrollToSelectionNext = true;
 	}
 
@@ -4384,7 +4352,7 @@ bool CEditor::ReplaceImage(const char *pFileName, int StorageType, bool CheckDup
 		}
 	}
 
-	CEditorImage ImgInfo(this);
+	CImageInfo ImgInfo;
 	if(!Graphics()->LoadPng(ImgInfo, pFileName, StorageType))
 	{
 		ShowFileDialogError("Failed to load image from file '%s'.", pFileName);
@@ -4394,21 +4362,25 @@ bool CEditor::ReplaceImage(const char *pFileName, int StorageType, bool CheckDup
 	std::shared_ptr<CEditorImage> pImg = m_Map.m_vpImages[m_SelectedImage];
 	Graphics()->UnloadTexture(&(pImg->m_Texture));
 	pImg->Free();
-	*pImg = ImgInfo;
+	pImg->m_Width = ImgInfo.m_Width;
+	pImg->m_Height = ImgInfo.m_Height;
+	pImg->m_Format = ImgInfo.m_Format;
+	pImg->m_pData = ImgInfo.m_pData;
 	str_copy(pImg->m_aName, aBuf);
 	pImg->m_External = IsVanillaImage(pImg->m_aName);
 
-	if(!pImg->m_External && g_Config.m_ClEditorDilate == 1 && pImg->m_Format == CImageInfo::FORMAT_RGBA)
+	ConvertToRgba(*pImg);
+	if(g_Config.m_ClEditorDilate == 1)
 	{
-		DilateImage(ImgInfo.m_pData, ImgInfo.m_Width, ImgInfo.m_Height);
+		DilateImage(*pImg);
 	}
 
 	pImg->m_AutoMapper.Load(pImg->m_aName);
 	int TextureLoadFlag = Graphics()->Uses2DTextureArrays() ? IGraphics::TEXLOAD_TO_2D_ARRAY_TEXTURE : IGraphics::TEXLOAD_TO_3D_TEXTURE;
-	if(ImgInfo.m_Width % 16 != 0 || ImgInfo.m_Height % 16 != 0)
+	if(pImg->m_Width % 16 != 0 || pImg->m_Height % 16 != 0)
 		TextureLoadFlag = 0;
-	pImg->m_Texture = Graphics()->LoadTextureRaw(ImgInfo, TextureLoadFlag, pFileName);
-	ImgInfo.m_pData = nullptr;
+	pImg->m_Texture = Graphics()->LoadTextureRaw(*pImg, TextureLoadFlag, pFileName);
+
 	SortImages();
 	for(size_t i = 0; i < m_Map.m_vpImages.size(); ++i)
 	{
@@ -4447,7 +4419,7 @@ bool CEditor::AddImage(const char *pFileName, int StorageType, void *pUser)
 		return false;
 	}
 
-	CEditorImage ImgInfo(pEditor);
+	CImageInfo ImgInfo;
 	if(!pEditor->Graphics()->LoadPng(ImgInfo, pFileName, StorageType))
 	{
 		pEditor->ShowFileDialogError("Failed to load image from file '%s'.", pFileName);
@@ -4455,19 +4427,22 @@ bool CEditor::AddImage(const char *pFileName, int StorageType, void *pUser)
 	}
 
 	std::shared_ptr<CEditorImage> pImg = std::make_shared<CEditorImage>(pEditor);
-	*pImg = ImgInfo;
+	pImg->m_Width = ImgInfo.m_Width;
+	pImg->m_Height = ImgInfo.m_Height;
+	pImg->m_Format = ImgInfo.m_Format;
+	pImg->m_pData = ImgInfo.m_pData;
 	pImg->m_External = IsVanillaImage(aBuf);
 
-	if(!pImg->m_External && g_Config.m_ClEditorDilate == 1 && pImg->m_Format == CImageInfo::FORMAT_RGBA)
+	ConvertToRgba(*pImg);
+	if(g_Config.m_ClEditorDilate == 1)
 	{
-		DilateImage(ImgInfo.m_pData, ImgInfo.m_Width, ImgInfo.m_Height);
+		DilateImage(*pImg);
 	}
 
 	int TextureLoadFlag = pEditor->Graphics()->Uses2DTextureArrays() ? IGraphics::TEXLOAD_TO_2D_ARRAY_TEXTURE : IGraphics::TEXLOAD_TO_3D_TEXTURE;
-	if(ImgInfo.m_Width % 16 != 0 || ImgInfo.m_Height % 16 != 0)
+	if(pImg->m_Width % 16 != 0 || pImg->m_Height % 16 != 0)
 		TextureLoadFlag = 0;
-	pImg->m_Texture = pEditor->Graphics()->LoadTextureRaw(ImgInfo, TextureLoadFlag, pFileName);
-	ImgInfo.m_pData = nullptr;
+	pImg->m_Texture = pEditor->Graphics()->LoadTextureRaw(*pImg, TextureLoadFlag, pFileName);
 	str_copy(pImg->m_aName, aBuf);
 	pImg->m_AutoMapper.Load(pImg->m_aName);
 	pEditor->m_Map.m_vpImages.push_back(pImg);
@@ -5951,14 +5926,14 @@ float CEditor::EnvelopeToScreenY(const CUIRect &View, float y) const
 	return View.y + View.h - y / m_ZoomEnvelopeY.GetValue() * View.h - m_OffsetEnvelopeY * View.h;
 }
 
-float CEditor::ScreenToEnvelopeDX(const CUIRect &View, float dx)
+float CEditor::ScreenToEnvelopeDX(const CUIRect &View, float DeltaX)
 {
-	return dx / Graphics()->ScreenWidth() * Ui()->Screen()->w / View.w * m_ZoomEnvelopeX.GetValue();
+	return DeltaX / Graphics()->ScreenWidth() * Ui()->Screen()->w / View.w * m_ZoomEnvelopeX.GetValue();
 }
 
-float CEditor::ScreenToEnvelopeDY(const CUIRect &View, float dy)
+float CEditor::ScreenToEnvelopeDY(const CUIRect &View, float DeltaY)
 {
-	return dy / Graphics()->ScreenHeight() * Ui()->Screen()->h / View.h * m_ZoomEnvelopeY.GetValue();
+	return DeltaY / Graphics()->ScreenHeight() * Ui()->Screen()->h / View.h * m_ZoomEnvelopeY.GetValue();
 }
 
 void CEditor::RemoveTimeOffsetEnvelope(const std::shared_ptr<CEnvelope> &pEnvelope)
@@ -7841,11 +7816,21 @@ void CEditor::Render()
 	else if(m_Mode == MODE_SOUNDS)
 		DoToolbarSounds(ToolBar);
 
-	if(m_Dialog == DIALOG_NONE && CLineInput::GetActiveInput() == nullptr)
+	if(m_Dialog == DIALOG_NONE)
 	{
 		const bool ModPressed = Input()->ModifierIsPressed();
 		const bool ShiftPressed = Input()->ShiftIsPressed();
 		const bool AltPressed = Input()->AltIsPressed();
+
+		if(CLineInput::GetActiveInput() == nullptr)
+		{
+			// ctrl+a to append map
+			if(Input()->KeyPress(KEY_A) && ModPressed)
+			{
+				InvokeFileDialog(IStorage::TYPE_ALL, FILETYPE_MAP, "Append map", "Append", "maps", false, CallbackAppendMap, this);
+			}
+		}
+
 		// ctrl+n to create new map
 		if(Input()->KeyPress(KEY_N) && ModPressed)
 		{
@@ -7862,11 +7847,6 @@ void CEditor::Render()
 				Reset();
 				m_aFileName[0] = 0;
 			}
-		}
-		// ctrl+a to append map
-		if(Input()->KeyPress(KEY_A) && ModPressed)
-		{
-			InvokeFileDialog(IStorage::TYPE_ALL, FILETYPE_MAP, "Append map", "Append", "maps", false, CallbackAppendMap, this);
 		}
 		// ctrl+o or ctrl+l to open
 		if((Input()->KeyPress(KEY_O) || Input()->KeyPress(KEY_L)) && ModPressed)
@@ -8644,7 +8624,9 @@ void CEditor::OnUpdate()
 	Input()->ConsumeEvents([&](const IInput::CEvent &Event) {
 		for(CEditorComponent &Component : m_vComponents)
 		{
-			if(Component.OnInput(Event))
+			// Events with flag `FLAG_RELEASE` must always be forwarded to all components so keys being
+			// released can be handled in all components also after some components have been disabled.
+			if(Component.OnInput(Event) && (Event.m_Flags & ~IInput::FLAG_RELEASE) != 0)
 				return;
 		}
 		Ui()->OnInput(Event);
@@ -8749,7 +8731,11 @@ bool CEditor::Save(const char *pFilename)
 	if(std::any_of(std::begin(m_WriterFinishJobs), std::end(m_WriterFinishJobs), [pFilename](const std::shared_ptr<CDataFileWriterFinishJob> &Job) { return str_comp(pFilename, Job->GetRealFileName()) == 0; }))
 		return false;
 
-	return m_Map.Save(pFilename);
+	const auto &&ErrorHandler = [this](const char *pErrorMessage) {
+		ShowFileDialogError("%s", pErrorMessage);
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "editor/save", pErrorMessage);
+	};
+	return m_Map.Save(pFilename, ErrorHandler);
 }
 
 bool CEditor::HandleMapDrop(const char *pFileName, int StorageType)

@@ -1254,7 +1254,7 @@ void CGameContext::OnTick()
 
 	if(Server()->Tick() % (g_Config.m_SvAnnouncementInterval * Server()->TickSpeed() * 60) == 0)
 	{
-		const char *pLine = Server()->GetAnnouncementLine(g_Config.m_SvAnnouncementFileName);
+		const char *pLine = Server()->GetAnnouncementLine();
 		if(pLine)
 			SendChat(-1, TEAM_ALL, pLine);
 	}
@@ -3223,15 +3223,19 @@ void CGameContext::ConHotReload(IConsole::IResult *pResult, void *pUserData)
 		if(!pSelf->GetPlayerChar(i))
 			continue;
 
+		CCharacter *pChar = pSelf->GetPlayerChar(i);
+
 		// Save the tee individually
 		pSelf->m_apSavedTees[i] = new CSaveTee();
-		pSelf->m_apSavedTees[i]->Save(pSelf->GetPlayerChar(i), false);
+		pSelf->m_apSavedTees[i]->Save(pChar, false);
 
 		if(pSelf->m_apPlayers[i])
 			pSelf->m_apSavedTeleTees[i] = new CSaveTee(pSelf->m_apPlayers[i]->m_LastTeleTee);
 
 		// Save the team state
 		pSelf->m_aTeamMapping[i] = pSelf->GetDDRaceTeam(i);
+		if(pSelf->m_aTeamMapping[i] == TEAM_SUPER)
+			pSelf->m_aTeamMapping[i] = pChar->m_TeamBeforeSuper;
 
 		if(pSelf->m_apSavedTeams[pSelf->m_aTeamMapping[i]])
 			continue;
@@ -3529,7 +3533,7 @@ void CGameContext::ConAddMapVotes(IConsole::IResult *pResult, void *pUserData)
 			str_format(aCommand, sizeof(aCommand), "clear_votes; add_map_votes \"%s\"", aDirectory);
 		}
 		else
-			str_format(aCommand, sizeof(aCommand), "change_map \"%s/%s\"", pDirectory, aOptionEscaped);
+			str_format(aCommand, sizeof(aCommand), "change_map \"%s%s%s\"", pDirectory, pDirectory[0] == '\0' ? "" : "/", aOptionEscaped);
 
 		pSelf->AddVote(aDescription, aCommand);
 	}
@@ -3645,6 +3649,8 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("set_team", "i[id] i[team-id] ?i[delay in minutes]", CFGFLAG_SERVER, ConSetTeam, this, "Set team of player to team");
 	Console()->Register("set_team_all", "i[team-id]", CFGFLAG_SERVER, ConSetTeamAll, this, "Set team of all players to team");
 	Console()->Register("hot_reload", "", CFGFLAG_SERVER | CMDFLAG_TEST, ConHotReload, this, "Reload the map while preserving the state of tees and teams");
+	Console()->Register("reload_censorlist", "", CFGFLAG_SERVER, ConReloadCensorlist, this, "Reload the censorlist");
+	Console()->Register("reload_announcement", "", CFGFLAG_SERVER, ConReloadAnnouncement, this, "Reload the announcements");
 
 	Console()->Register("add_vote", "s[name] r[command]", CFGFLAG_SERVER, ConAddVote, this, "Add a voting option");
 	Console()->Register("remove_vote", "r[name]", CFGFLAG_SERVER, ConRemoveVote, this, "remove a voting option");
@@ -3938,19 +3944,7 @@ void CGameContext::OnInit(const void *pPersistentData)
 
 	Console()->ExecuteFile(g_Config.m_SvResetFile, -1);
 
-	const char *pCensorFilename = "censorlist.txt";
-	CLineReader LineReader;
-	if(LineReader.OpenFile(Storage()->OpenFile(pCensorFilename, IOFLAG_READ, IStorage::TYPE_ALL)))
-	{
-		while(const char *pLine = LineReader.Get())
-		{
-			m_vCensorlist.emplace_back(pLine);
-		}
-	}
-	else
-	{
-		dbg_msg("censorlist", "failed to open '%s'", pCensorFilename);
-	}
+	ReadCensorList();
 
 	m_TeeHistorianActive = g_Config.m_SvTeeHistorian;
 	if(m_TeeHistorianActive)
@@ -4993,4 +4987,22 @@ void CGameContext::OnUpdatePlayerServerInfo(CJsonStringWriter *pJSonWriter, int 
 
 	pJSonWriter->WriteAttribute("team");
 	pJSonWriter->WriteIntValue(Team);
+}
+
+void CGameContext::ReadCensorList()
+{
+	const char *pCensorFilename = "censorlist.txt";
+	CLineReader LineReader;
+	m_vCensorlist.clear();
+	if(LineReader.OpenFile(Storage()->OpenFile(pCensorFilename, IOFLAG_READ, IStorage::TYPE_ALL)))
+	{
+		while(const char *pLine = LineReader.Get())
+		{
+			m_vCensorlist.emplace_back(pLine);
+		}
+	}
+	else
+	{
+		dbg_msg("censorlist", "failed to open '%s'", pCensorFilename);
+	}
 }

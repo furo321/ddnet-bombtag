@@ -93,6 +93,7 @@ MAYBE_UNUSED static const char *FONT_ICON_EARTH_AMERICAS = "\xEF\x95\xBD";
 MAYBE_UNUSED static const char *FONT_ICON_NETWORK_WIRED = "\xEF\x9B\xBF";
 MAYBE_UNUSED static const char *FONT_ICON_LIST_UL = "\xEF\x83\x8A";
 MAYBE_UNUSED static const char *FONT_ICON_INFO = "\xEF\x84\xA9";
+MAYBE_UNUSED static const char *FONT_ICON_TERMINAL = "\xEF\x84\xA0";
 
 MAYBE_UNUSED static const char *FONT_ICON_SLASH = "\xEF\x9C\x95";
 MAYBE_UNUSED static const char *FONT_ICON_PLAY = "\xEF\x81\x8B";
@@ -351,11 +352,11 @@ public:
 
 	// old foolish interface
 	virtual void TextColor(float r, float g, float b, float a) = 0;
-	virtual void TextColor(ColorRGBA rgb) = 0;
+	virtual void TextColor(ColorRGBA Color) = 0;
 	virtual void TextOutlineColor(float r, float g, float b, float a) = 0;
-	virtual void TextOutlineColor(ColorRGBA rgb) = 0;
+	virtual void TextOutlineColor(ColorRGBA Color) = 0;
 	virtual void TextSelectionColor(float r, float g, float b, float a) = 0;
-	virtual void TextSelectionColor(ColorRGBA rgb) = 0;
+	virtual void TextSelectionColor(ColorRGBA Color) = 0;
 	virtual void Text(float x, float y, float Size, const char *pText, float LineWidth = -1.0f) = 0;
 	virtual float TextWidth(float Size, const char *pText, int StrLength = -1, float LineWidth = -1.0f, int Flags = 0, const STextSizeProperties &TextSizeProps = {}) = 0;
 	virtual STextBoundingBox TextBoundingBox(float Size, const char *pText, int StrLength = -1, float LineWidth = -1.0f, float LineSpacing = 0.0f, int Flags = 0) = 0;
