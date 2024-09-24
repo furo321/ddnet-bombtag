@@ -18,6 +18,6 @@ MACRO_CONFIG_INT(BombtagScoreForWinning, bombtag_score_for_winning, 1, 0, 100, C
 MACRO_CONFIG_INT(BombtagSecondsToExplosion, bombtag_seconds_to_explosion, 15, 0, 100, CFGFLAG_SERVER, "The amount of seconds till the bomb explodes.")
 MACRO_CONFIG_INT(BombtagBombDamage, bombtag_bomb_damage, 1, 0, 100, CFGFLAG_SERVER, "The amount of seconds removed from a bombs timer when hit by someone.")
 MACRO_CONFIG_INT(BombtagHammerFreeze, bombtag_hammer_freeze, 50, 0, 100000, CFGFLAG_SERVER, "The amount of ticks of freeze inflicted when hitting an alive player. (0 to disable)")
-MACRO_CONFIG_INT(BombtagBombWeapon, bombtag_bomb_weapon, 0, 0, 5, CFGFLAG_SERVER, "Which weapon should the bomb be given")
+MACRO_CONFIG_INT(BombtagBombWeapon, bombtag_bomb_weapon, 0, 0, 5, CFGFLAG_SERVER, "Which weapon should the bomb be given? 0 - Hammer, 1 - Gun, 2 - Shotgun, 3 - Grenade, 4 - Laser, 5 - Ninja")
 
 #endif
