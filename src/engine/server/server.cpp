@@ -1367,6 +1367,9 @@ int CServer::NumRconCommands(int ClientId)
 
 void CServer::UpdateClientRconCommands()
 {
+	if(Tick() % 4 != 0)
+		return;
+
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
 		if(m_aClients[ClientId].m_State != CClient::STATE_EMPTY && m_aClients[ClientId].m_Authed)
