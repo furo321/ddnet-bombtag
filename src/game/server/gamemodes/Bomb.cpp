@@ -154,6 +154,14 @@ void CGameControllerBomb::DoTeamChange(class CPlayer *pPlayer, int Team, bool Do
 	if(Team == pPlayer->GetTeam())
 		return;
 
+	if(Team == TEAM_SPECTATORS)
+	{
+		if(m_aPlayers[pPlayer->GetCid()].m_State == STATE_ALIVE)
+			EliminatePlayer(pPlayer->GetCid());
+
+		m_aPlayers[pPlayer->GetCid()].m_State = STATE_SPECTATING;
+	}
+
 	IGameController::DoTeamChange(pPlayer, Team, DoChatMsg);
 	if(m_RoundActive)
 		SetSkin(pPlayer);
