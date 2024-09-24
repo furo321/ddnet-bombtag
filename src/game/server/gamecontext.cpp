@@ -3625,8 +3625,12 @@ void CGameContext::ConchainBombWeapon(IConsole::IResult *pResult, void *pUserDat
 	{
 		CGameContext *pSelf = (CGameContext *)pUserData;
 		CGameControllerBomb *pController = (CGameControllerBomb *)pSelf->m_pController;
+
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
+			if(!pController)
+				break;
+
 			if(pController->m_aPlayers[i].m_State != CGameControllerBomb::STATE_ALIVE)
 				continue;
 			if(!pController->m_aPlayers[i].m_Bomb)
@@ -3959,6 +3963,8 @@ void CGameContext::OnInit(const void *pPersistentData)
 			Switcher.m_Initial = true;
 	}
 
+	Console()->ExecuteFile(g_Config.m_SvResetFile, -1);
+
 	LoadMapSettings();
 
 	m_MapBugs.Dump();
@@ -3984,8 +3990,6 @@ void CGameContext::OnInit(const void *pPersistentData)
 		m_pController = new CGameControllerBomb(this);
 	else
 		m_pController = new CGameControllerDDRace(this);
-
-	Console()->ExecuteFile(g_Config.m_SvResetFile, -1);
 
 	ReadCensorList();
 
