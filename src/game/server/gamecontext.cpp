@@ -1211,13 +1211,13 @@ void CGameContext::OnTick()
 			else if(m_VoteEnforce == VOTE_ENFORCE_YES_ADMIN)
 			{
 				Console()->ExecuteLine(m_aVoteCommand, m_VoteCreator);
-				SendChat(-1, TEAM_ALL, "Vote passed enforced by authorized player", -1, FLAG_SIX);
+				SendChat(-1, TEAM_ALL, "Vote passed", -1, FLAG_SIX); // Vote passed enforced by authorized player"
 				EndVote();
 			}
 			else if(m_VoteEnforce == VOTE_ENFORCE_NO_ADMIN)
 			{
 				EndVote();
-				SendChat(-1, TEAM_ALL, "Vote failed enforced by authorized player", -1, FLAG_SIX);
+				SendChat(-1, TEAM_ALL, "Vote failed", -1, FLAG_SIX); // Vote failed enforced by authorized player"
 			}
 			//else if(m_VoteEnforce == VOTE_ENFORCE_NO || time_get() > m_VoteCloseTime)
 			else if(m_VoteEnforce == VOTE_ENFORCE_NO || (time_get() > m_VoteCloseTime && g_Config.m_SvVoteMajority))
@@ -4872,8 +4872,8 @@ void CGameContext::ForceVote(int EnforcerId, bool Success)
 
 	char aBuf[256];
 	const char *pOption = Success ? "yes" : "no";
-	str_format(aBuf, sizeof(aBuf), "authorized player forced vote %s", pOption);
-	SendChatTarget(-1, aBuf);
+	// str_format(aBuf, sizeof(aBuf), "authorized player forced vote %s", pOption);
+	// SendChatTarget(-1, aBuf);
 	str_format(aBuf, sizeof(aBuf), "forcing vote %s", pOption);
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 }
