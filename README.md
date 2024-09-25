@@ -14,7 +14,7 @@ This mod is pretty much an enchanced version of the original mod from [SomeRunce
 ## Configuration
 Bombtag has a few options you can use to configure and tweak the gameplay. They're the following,
 
-- `bombtag_bombs_per_player`, The amount of bombs that should spawn per X alive players. Default: 6
+- `bombtag_bombs_per_player`, The amount of bombs that should spawn per X alive players, 1 for everyone except one. Default: 6
 - `bombtag_score_for_surviving`, The amount of score given for players surviving a round. Default: 0
 - `bombtag_score_for_winning`, The amount of score given for the player who wins the round. Default: 1
 - `bombtag_seconds_to_explosion`, The amount of seconds till the bomb explodes. Default: 15

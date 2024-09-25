@@ -11,7 +11,7 @@
 #endif
 
 // def, min, max
-MACRO_CONFIG_INT(BombtagBombsPerPlayer, bombtag_bombs_per_player, 6, 1, 64, CFGFLAG_SERVER, "The amount of bombs that should spawn per X alive players.")
+MACRO_CONFIG_INT(BombtagBombsPerPlayer, bombtag_bombs_per_player, 6, 1, 64, CFGFLAG_SERVER, "The amount of bombs that should spawn per X alive players, 1 for everyone except one.")
 MACRO_CONFIG_INT(BombtagScoreForSuriving, bombtag_score_for_surviving, 0, 0, 100, CFGFLAG_SERVER, "The amount of score given for players surviving a round.")
 MACRO_CONFIG_INT(BombtagScoreForWinning, bombtag_score_for_winning, 1, 0, 100, CFGFLAG_SERVER, "The amount of score given for the player who wins the round.")
 
