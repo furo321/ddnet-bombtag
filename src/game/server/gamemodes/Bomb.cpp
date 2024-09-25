@@ -422,7 +422,8 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 				GameServer()->m_apPlayers[i]->m_Score = m_aPlayers[i].m_Score;
 			}
 		}
-		MakeRandomBomb(std::ceil(Alive / (float)g_Config.m_BombtagBombsPerPlayer));
+		const int BombsPerPlayer = g_Config.m_BombtagBombsPerPlayer;
+		MakeRandomBomb(std::ceil((Alive / (float)BombsPerPlayer) - (BombsPerPlayer == 1 ? 1 : 0)));
 	}
 	else
 	{
@@ -477,7 +478,7 @@ void CGameControllerBomb::EliminatePlayer(int ClientId)
 
 void CGameControllerBomb::StartBombRound()
 {
-	int players = 0;
+	int Players = 0;
 	m_RoundActive = true;
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
@@ -485,10 +486,11 @@ void CGameControllerBomb::StartBombRound()
 		{
 			GameServer()->m_apPlayers[i]->SetTeam(TEAM_FLOCK, true);
 			m_aPlayers[i].m_State = STATE_ALIVE;
-			players++;
+			Players++;
 		}
 	}
-	MakeRandomBomb(std::ceil(players / (float)g_Config.m_BombtagBombsPerPlayer));
+	const int BombsPerPlayer = g_Config.m_BombtagBombsPerPlayer;
+	MakeRandomBomb(std::ceil((Players / (float)BombsPerPlayer) - (BombsPerPlayer == 1 ? 1 : 0)));
 }
 
 void CGameControllerBomb::UpdateTimer()
