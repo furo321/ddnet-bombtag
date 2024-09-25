@@ -1663,6 +1663,9 @@ bool CGameContext::OnClientDataPersist(int ClientId, void *pData)
 			pPersistent->m_IsSpectator = true;
 		else
 			pPersistent->m_IsSpectator = false;
+
+		// Save your score
+		pPersistent->m_Score = pController->m_aPlayers[ClientId].m_Score;
 	}
 	else
 		pPersistent->m_IsSpectator = m_apPlayers[ClientId]->GetTeam() == TEAM_SPECTATORS;
@@ -1675,10 +1678,12 @@ void CGameContext::OnClientConnected(int ClientId, void *pData)
 	CPersistentClientData *pPersistentData = (CPersistentClientData *)pData;
 	bool Spec = false;
 	bool Afk = true;
+	int Score = 0;
 	if(pPersistentData)
 	{
 		Spec = pPersistentData->m_IsSpectator;
 		Afk = pPersistentData->m_IsAfk;
+		Score = pPersistentData->m_Score;
 	}
 
 	{
@@ -1706,6 +1711,13 @@ void CGameContext::OnClientConnected(int ClientId, void *pData)
 	m_apPlayers[ClientId] = new(ClientId) CPlayer(this, NextUniqueClientId, ClientId, StartTeam);
 	m_apPlayers[ClientId]->SetInitialAfk(Afk);
 	NextUniqueClientId += 1;
+
+	if(!str_comp(Config()->m_SvGametype, "bomb"))
+	{
+		CGameControllerBomb *pController = (CGameControllerBomb *)m_pController;
+		// Load score
+		pController->m_aPlayers[ClientId].m_Score = Score;
+	}
 
 	SendMotd(ClientId);
 	SendSettings(ClientId);

@@ -73,17 +73,18 @@ void CGameControllerBomb::OnPlayerConnect(CPlayer *pPlayer)
 
 	if(!Server()->ClientPrevIngame(ClientId))
 	{
+		m_aPlayers[pPlayer->GetCid()].m_Score = 0;
 		char aBuf[512];
 		str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s", Server()->ClientName(ClientId), GetTeamName(pPlayer->GetTeam()));
 		GameServer()->SendChat(-1, TEAM_ALL, aBuf);
 		GameServer()->SendChatTarget(ClientId, "BOMB Mod. Source code: https://github.com/furo321/ddnet-bombtag");
 	}
-	m_aPlayers[pPlayer->GetCid()].m_Score = 0;
 	if(m_RoundActive && m_aPlayers[ClientId].m_State != STATE_SPECTATING)
 	{
 		GameServer()->SendBroadcast("There's currently a game in progress, you'll join once the round is over!", ClientId);
 	}
 	SetSkin(pPlayer);
+	pPlayer->m_Score = m_aPlayers[pPlayer->GetCid()].m_Score;
 }
 
 void CGameControllerBomb::OnPlayerDisconnect(CPlayer *pPlayer, const char *pReason)
