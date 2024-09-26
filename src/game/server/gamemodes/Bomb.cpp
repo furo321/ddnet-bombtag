@@ -305,6 +305,8 @@ void CGameControllerBomb::OnTakeDamage(int Dmg, int From, int To, int Weapon)
 			pOldBombChr->SetWeapon(WEAPON_HAMMER);
 
 			pNewBombChr->GiveWeapon(g_Config.m_BombtagBombWeapon, false);
+			if(m_aPlayers[To].m_Tick < g_Config.m_BombtagMinSecondsToExplosion * SERVER_TICK_SPEED && g_Config.m_BombtagMinSecondsToExplosion)
+				m_aPlayers[To].m_Tick = g_Config.m_BombtagMinSecondsToExplosion * SERVER_TICK_SPEED;
 			pNewBombChr->SetWeapon(g_Config.m_BombtagBombWeapon);
 		}
 	}
