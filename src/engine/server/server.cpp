@@ -2778,6 +2778,7 @@ int CServer::Run()
 	}
 
 	ReadAnnouncementsFile(g_Config.m_SvAnnouncementFileName);
+	ReadMysteryRoundsFile(g_Config.m_SvMysteryRoundsFileName);
 
 	// process pending commands
 	m_pConsole->StoreCommands(false);
@@ -3817,6 +3818,17 @@ void CServer::ConchainAnnouncementFileName(IConsole::IResult *pResult, void *pUs
 	}
 }
 
+void CServer::ConchainMysteryRoundsFileName(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	CServer *pSelf = (CServer *)pUserData;
+	bool Changed = pResult->NumArguments() && str_comp(pResult->GetString(0), g_Config.m_SvMysteryRoundsFileName);
+	pfnCallback(pResult, pCallbackUserData);
+	if(Changed)
+	{
+		pSelf->ReadMysteryRoundsFile(g_Config.m_SvMysteryRoundsFileName);
+	}
+}
+
 #if defined(CONF_FAMILY_UNIX)
 void CServer::ConchainConnLoggingServerChange(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
@@ -3989,6 +4001,52 @@ const char *CServer::GetAnnouncementLine()
 	}
 
 	return m_vAnnouncements[m_AnnouncementLastLine].c_str();
+}
+
+void CServer::ReadMysteryRoundsFile(const char *pFileName)
+{
+	m_vMysteryRounds.clear();
+
+	if(pFileName[0] == '\0')
+		return;
+
+	CLineReader LineReader;
+	if(!LineReader.OpenFile(m_pStorage->OpenFile(pFileName, IOFLAG_READ, IStorage::TYPE_ALL)))
+	{
+		dbg_msg("bombtag", "failed to open '%s'", pFileName);
+		return;
+	}
+	while(const char *pLine = LineReader.Get())
+	{
+		if(str_length(pLine) && pLine[0] != '#')
+		{
+			m_vMysteryRounds.emplace_back(pLine);
+		}
+	}
+}
+
+const char *CServer::GetMysteryRoundLine()
+{
+	if(m_vMysteryRounds.empty())
+	{
+		return 0;
+	}
+	else if(m_vMysteryRounds.size() == 1)
+	{
+		m_MysteryRoundLastLine = 0;
+	}
+	else
+	{
+		unsigned Rand;
+		do
+		{
+			Rand = rand() % m_vMysteryRounds.size();
+		} while(Rand == m_MysteryRoundLastLine);
+
+		m_MysteryRoundLastLine = Rand;
+	}
+
+	return m_vMysteryRounds[m_MysteryRoundLastLine].c_str();
 }
 
 int *CServer::GetIdMap(int ClientId)

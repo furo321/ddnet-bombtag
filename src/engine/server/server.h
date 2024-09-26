@@ -261,6 +261,9 @@ public:
 	size_t m_AnnouncementLastLine;
 	std::vector<std::string> m_vAnnouncements;
 
+	size_t m_MysteryRoundLastLine;
+	std::vector<std::string> m_vMysteryRounds;
+
 	std::shared_ptr<ILogger> m_pFileLogger = nullptr;
 	std::shared_ptr<ILogger> m_pStdoutLogger = nullptr;
 
@@ -427,6 +430,7 @@ public:
 	static void ConchainLoglevel(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainStdoutOutputLevel(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainAnnouncementFileName(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	static void ConchainMysteryRoundsFileName(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 #if defined(CONF_FAMILY_UNIX)
 	static void ConchainConnLoggingServerChange(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
@@ -445,6 +449,9 @@ public:
 	int m_aPrevStates[MAX_CLIENTS];
 	const char *GetAnnouncementLine() override;
 	void ReadAnnouncementsFile(const char *pFileName) override;
+
+	const char *GetMysteryRoundLine() override;
+	void ReadMysteryRoundsFile(const char *pFileName) override;
 
 	int *GetIdMap(int ClientId) override;
 
