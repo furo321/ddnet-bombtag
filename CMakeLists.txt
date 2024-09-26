@@ -2667,6 +2667,7 @@ endif()
 if(SERVER)
   # Sources
   set_src(ANTIBOT_SRC GLOB src/antibot
+    antibot_bombtag.cpp
     antibot_data.h
     antibot_interface.h
     antibot_null.cpp

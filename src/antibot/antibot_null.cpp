@@ -1,3 +1,4 @@
+#ifdef UNUSED
 #define ANTIBOTAPI DYNAMIC_EXPORT
 
 #include "antibot_interface.h"
@@ -48,3 +49,4 @@ bool AntibotOnEngineClientMessage(int /*ClientId*/, const void * /*pData*/, int 
 bool AntibotOnEngineServerMessage(int /*ClientId*/, const void * /*pData*/, int /*Size*/, int /*Flags*/) { return false; }
 bool AntibotOnEngineSimulateClientMessage(int * /*pClientId*/, void * /*pBuffer*/, int /*BufferSize*/, int * /*pOutSize*/, int * /*pFlags*/) { return false; }
 }
+#endif
