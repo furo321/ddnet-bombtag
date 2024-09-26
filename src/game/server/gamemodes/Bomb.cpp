@@ -1,11 +1,11 @@
 #include "Bomb.h"
-#include "base/color.h"
-#include "engine/shared/config.h"
-#include "engine/shared/protocol.h"
-#include "game/gamecore.h"
-#include "game/generated/protocol.h"
-#include "game/server/entities/character.h"
-#include "game/server/player.h"
+#include <base/color.h>
+#include <engine/shared/config.h>
+#include <engine/shared/protocol.h>
+#include <game/gamecore.h>
+#include <game/generated/protocol.h>
+#include <game/server/entities/character.h>
+#include <game/server/player.h>
 #include <random>
 
 // Exchange this to a string that identifies your game mode.
