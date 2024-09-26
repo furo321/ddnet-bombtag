@@ -549,10 +549,39 @@ void CCharacter::FireWeapon()
 
 	case WEAPON_SHOTGUN:
 	{
-		float LaserReach = GetTuning(m_TuneZone)->m_LaserReach;
+		// float LaserReach = GetTuning(m_TuneZone)->m_LaserReach;
 
-		new CLaser(&GameServer()->m_World, m_Pos, Direction, LaserReach, m_pPlayer->GetCid(), WEAPON_SHOTGUN);
-		GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE, TeamMask()); // NOLINT(clang-analyzer-unix.Malloc)
+		// new CLaser(&GameServer()->m_World, m_Pos, Direction, LaserReach, m_pPlayer->GetCid(), WEAPON_SHOTGUN);
+		// GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE, TeamMask()); // NOLINT(clang-analyzer-unix.Malloc)
+		// int ShotSpread = 2;
+
+		// stolen from ddnet-insta
+		int ShotSpread = 2;
+
+		for(int i = -ShotSpread; i <= ShotSpread; ++i) // NOLINT(clang-analyzer-unix.Malloc)
+		{
+			float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
+			float Angle = angle(Direction);
+			Angle += Spreading[i + 2];
+			float v = 1 - (absolute(i) / (float)ShotSpread);
+			float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
+
+			// TODO: not sure about Dir and InitDir and prediction
+
+			new CProjectile(
+				GameWorld(),
+				WEAPON_SHOTGUN, // Type
+				GetPlayer()->GetCid(), // Owner
+				ProjStartPos, // Pos
+				direction(Angle) * Speed, // Dir
+				(int)(Server()->TickSpeed() * GameServer()->Tuning()->m_ShotgunLifetime), // Span
+				false, // Freeze
+				false, // Explosive
+				-1, // SoundImpact
+				vec2(cosf(Angle), sinf(Angle)) * Speed); // InitDir
+		}
+
+		GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
 	}
 	break;
 
