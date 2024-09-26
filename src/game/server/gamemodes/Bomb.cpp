@@ -1,4 +1,6 @@
 #include "Bomb.h"
+#include "base/system.h"
+#include <engine/shared/linereader.h>
 #include <base/color.h>
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
@@ -438,6 +440,21 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 				GameServer()->SendChat(-1, TEAM_ALL, aBuf);
 				m_aPlayers[i].m_Score += g_Config.m_BombtagScoreForWinning;
 				GameServer()->m_apPlayers[i]->m_Score = m_aPlayers[i].m_Score;
+				if(g_Config.m_BombtagMysteryChance && rand() % 101 <= g_Config.m_BombtagMysteryChance)
+				{
+					const char *pLine = GameServer()->Server()->GetMysteryRoundLine();
+					if(pLine)
+					{
+						GameServer()->SendChat(-1, TEAM_ALL, "MYSTERY ROUND!");
+						GameServer()->Console()->ExecuteLine(pLine);
+						m_WasMysteryRound = true;
+					}
+				}
+				else if(m_WasMysteryRound)
+				{
+					GameServer()->Console()->ExecuteFile(g_Config.m_SvMysteryRoundsResetFileName);
+					m_WasMysteryRound = false;
+				}
 				break;
 			}
 		}

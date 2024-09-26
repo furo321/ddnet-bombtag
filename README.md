@@ -22,6 +22,9 @@ Bombtag has a few options you can use to configure and tweak the gameplay. They'
 - `bombtag_hammer_freeze`, The amount of ticks of freeze inflicted when hitting an alive player. (0 to disable). Default: 50
 - `bombtag_bomb_weapon`, Which weapon should the bomb be given? 0 - Hammer, 1 - Gun, 2 - Shotgun, 3 - Grenade, 4 - Laser, 5 - Ninja. Default: 0
 - `bombtag_seconds_to_explosion`, The minimum amount of seconds a tee's bomb timer will have after getting bomb. Default: 1
+- `bombtag_mystery_chance`, The percentage of a mystery round happening! A random line from sv_mysteryrounds_filename will be executed. Default: 0
+- `sv_mysteryrounds_filename`, File which contains mystery round commands, one round per line. Default: ""
+- `sv_mysteryrounds_reset_filename`, File which contains the commands to execute after a mystery round. Default: ""
 
 ## Building
 This mod is based on DDRaceNetwork. You can use their instructions to learn how to build the project, [ddnet/ddnet](https://github.com/ddnet/ddnet).

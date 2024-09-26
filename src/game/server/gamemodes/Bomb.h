@@ -70,5 +70,6 @@ public:
 
 	void OnTakeDamage(int Dmg, int From, int To, int Weapon) override;
 	void OnSkinChange(const char *pSkin, bool UseCustomColor, int ColorBody, int ColorFeet, int ClientId) override;
+	bool m_WasMysteryRound = false;
 };
 #endif // GAME_SERVER_GAMEMODES_BOMB_H
