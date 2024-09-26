@@ -27,6 +27,7 @@ struct CAntibotPlayerData
 
 struct CAntibotInputData
 {
+	int m_Fire;
 	int m_TargetX;
 	int m_TargetY;
 };

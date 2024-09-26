@@ -1346,10 +1346,13 @@ void CCharacter::FillAntibot(CAntibotCharacterData *pData)
 	pData->m_HookedPlayer = m_Core.HookedPlayer();
 	pData->m_SpawnTick = m_SpawnTick;
 	pData->m_WeaponChangeTick = m_WeaponChangeTick;
+	pData->m_aLatestInputs[0].m_Fire = m_LatestInput.m_Fire;
 	pData->m_aLatestInputs[0].m_TargetX = m_LatestInput.m_TargetX;
 	pData->m_aLatestInputs[0].m_TargetY = m_LatestInput.m_TargetY;
+	pData->m_aLatestInputs[1].m_Fire = m_LatestPrevInput.m_Fire;
 	pData->m_aLatestInputs[1].m_TargetX = m_LatestPrevInput.m_TargetX;
 	pData->m_aLatestInputs[1].m_TargetY = m_LatestPrevInput.m_TargetY;
+	pData->m_aLatestInputs[2].m_Fire = m_LatestPrevPrevInput.m_Fire;
 	pData->m_aLatestInputs[2].m_TargetX = m_LatestPrevPrevInput.m_TargetX;
 	pData->m_aLatestInputs[2].m_TargetY = m_LatestPrevPrevInput.m_TargetY;
 }
