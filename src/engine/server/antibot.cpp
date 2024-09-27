@@ -28,6 +28,11 @@ void CAntibot::Kick(int ClientId, const char *pMessage, void *pUser)
 	CAntibot *pAntibot = (CAntibot *)pUser;
 	pAntibot->Server()->Kick(ClientId, pMessage);
 }
+void CAntibot::Ban(int ClientId, int Seconds, const char *pMessage, void *pUser)
+{
+	CAntibot *pAntibot = (CAntibot *)pUser;
+	pAntibot->Server()->Ban(ClientId, Seconds, pMessage, false);
+}
 void CAntibot::Log(const char *pMessage, void *pUser)
 {
 	CAntibot *pAntibot = (CAntibot *)pUser;
@@ -73,6 +78,7 @@ void CAntibot::Init()
 	m_Data.m_Now = time_get();
 	m_Data.m_Freq = time_freq();
 	m_Data.m_pfnKick = Kick;
+	m_Data.m_pfnBan = Ban;
 	m_Data.m_pfnLog = Log;
 	m_Data.m_pfnReport = Report;
 	m_Data.m_pfnSend = Send;
