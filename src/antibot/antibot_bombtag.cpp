@@ -1,5 +1,6 @@
 #include <antibot/antibot_data.h>
 #include <base/system.h>
+#include <engine/shared/packer.h>
 #include <engine/shared/protocol.h>
 #include <game/gamecore.h>
 #define ANTIBOTAPI DYNAMIC_EXPORT
@@ -97,7 +98,42 @@ void AntibotOnHookAttach(int /*ClientId*/, bool /*Player*/) {}
 void AntibotOnEngineTick(void) {}
 void AntibotOnEngineClientJoin(int /*ClientId*/, bool /*Sixup*/) {}
 void AntibotOnEngineClientDrop(int /*ClientId*/, const char * /*pReason*/) {}
-bool AntibotOnEngineClientMessage(int /*ClientId*/, const void * /*pData*/, int /*Size*/, int /*Flags*/) { return false; }
+
+bool AntibotOnEngineClientMessage(int ClientId, const void *pData, int Size, int Flags)
+{
+	CUnpacker Unpacker;
+	Unpacker.Reset(pData, Size);
+	CMsgPacker Packer(NETMSG_EX, true);
+
+	// unpack msgid and system flag
+	int Msg;
+	bool Sys;
+	CUuid Uuid;
+
+	int Result = UnpackMessageId(&Msg, &Sys, &Uuid, &Unpacker, &Packer);
+	if(Result == UNPACKMESSAGE_ERROR)
+	{
+		return false;
+	}
+
+	if(Msg == NETMSGTYPE_CL_SAY)
+	{
+		CNetObjHandler NetObjHandler;
+		void *pRawMsg = NetObjHandler.SecureUnpackMsg(Msg, &Unpacker);
+		if(!pRawMsg)
+			return false;
+
+		CNetMsg_Cl_Say *pMsg = (CNetMsg_Cl_Say *)pRawMsg;
+		if(str_find_nocase(pMsg->m_pMessage, "krxclient.xyz"))
+		{
+			g_pData->m_pfnBan(ClientId, 0, "Bot detected", g_pData->m_pUser);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool AntibotOnEngineServerMessage(int /*ClientId*/, const void * /*pData*/, int /*Size*/, int /*Flags*/) { return false; }
 bool AntibotOnEngineSimulateClientMessage(int * /*pClientId*/, void * /*pBuffer*/, int /*BufferSize*/, int * /*pOutSize*/, int * /*pFlags*/) { return false; }
 }

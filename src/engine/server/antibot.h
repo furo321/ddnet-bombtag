@@ -20,6 +20,7 @@ class CAntibot : public IEngineAntibot
 
 	void Update();
 	static void Kick(int ClientId, const char *pMessage, void *pUser);
+	static void Ban(int ClientId, int Seconds, const char *pMessage, void *pUser);
 	static void Log(const char *pMessage, void *pUser);
 	static void Report(int ClientId, const char *pMessage, void *pUser);
 	static void Send(int ClientId, const void *pData, int Size, int Flags, void *pUser);

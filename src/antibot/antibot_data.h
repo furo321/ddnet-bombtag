@@ -89,6 +89,7 @@ struct CAntibotData
 	int64_t m_Now;
 	int64_t m_Freq;
 	void (*m_pfnKick)(int ClientId, const char *pMessage, void *pUser);
+	void (*m_pfnBan)(int ClientId, int Seconds, const char *pMessage, void *pUser);
 	void (*m_pfnLog)(const char *pMessage, void *pUser);
 	void (*m_pfnReport)(int ClientId, const char *pMessage, void *pUser);
 	void (*m_pfnSend)(int ClientId, const void *pData, int DataSize, int Flags, void *pUser);
