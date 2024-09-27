@@ -89,7 +89,8 @@ void AntibotOnDirectInput(int ClientId)
 
 void AntibotOnCharacterTick(int ClientId)
 {
-	g_Clicks[ClientId][(g_pRoundData->m_Tick - 50) % SERVER_TICK_SPEED] = 0;
+	if(g_pRoundData->m_Tick > SERVER_TICK_SPEED)
+		g_Clicks[ClientId][(g_pRoundData->m_Tick - SERVER_TICK_SPEED) % SERVER_TICK_SPEED] = 0;
 }
 
 void AntibotOnHookAttach(int /*ClientId*/, bool /*Player*/) {}
