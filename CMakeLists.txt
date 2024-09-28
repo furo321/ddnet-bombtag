@@ -1537,31 +1537,18 @@ set(EXPECTED_DATA
   mapres/winter_mountains.png
   mapres/winter_mountains2.png
   mapres/winter_mountains3.png
-  maps/Gold\ Mine.map
-  maps/LearnToPlay.map
-  maps/Sunny\ Side\ Up.map
-  maps/Tsunami.map
-  maps/Tutorial.map
-  maps/coverage.map
-  maps/ctf1.map
-  maps/ctf2.map
-  maps/ctf3.map
-  maps/ctf4.map
-  maps/ctf5.map
-  maps/ctf6.map
-  maps/ctf7.map
-  maps/dm1.map
-  maps/dm2.map
-  maps/dm6.map
-  maps/dm7.map
-  maps/dm8.map
-  maps/dm9.map
+  maps/Linear\ Bombtag.map
+  maps/bm1.map
+  maps/bomb_bluehour.map
+  maps/bomb_bomberman.map
+  maps/bomb_retro.map
+  maps/bomb_s.map
+  maps/bombtag1.map
+  maps/bombtag2.map
+  maps/bombtag3.map
+  maps/bombtag4.map
+  maps/bombtag_small.map
   maps/license.txt
-  maps7/Gold\ Mine.map
-  maps7/LearnToPlay.map
-  maps7/Sunny\ Side\ Up.map
-  maps7/Tsunami.map
-  maps7/Tutorial.map
   maps7/readme.txt
   menuimages/demos.png
   menuimages/editor.png
