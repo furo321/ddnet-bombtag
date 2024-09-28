@@ -899,6 +899,12 @@ void CGameContext::ConReloadAnnouncement(IConsole::IResult *pResult, void *pUser
 	pSelf->Server()->ReadAnnouncementsFile(g_Config.m_SvAnnouncementFileName);
 }
 
+void CGameContext::ConReloadMysteryRounds(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	pSelf->Server()->ReadMysteryRoundsFile(g_Config.m_SvMysteryRoundsFileName);
+}
+
 void CGameContext::ConDumpAntibot(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
