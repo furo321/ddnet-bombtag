@@ -446,6 +446,7 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 					if(pLine)
 					{
 						GameServer()->SendChat(-1, TEAM_ALL, "MYSTERY ROUND!");
+						GameServer()->Console()->ExecuteFile(g_Config.m_SvMysteryRoundsResetFileName);
 						GameServer()->Console()->ExecuteLine(pLine);
 						m_WasMysteryRound = true;
 					}
