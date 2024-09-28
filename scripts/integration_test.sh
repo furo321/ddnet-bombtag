@@ -112,8 +112,7 @@ function print_results() {
 
 rm -rf integration_test
 mkdir -p integration_test/data/maps
-cp data/maps/coverage.map integration_test/data/maps
-cp data/maps/Tutorial.map integration_test/data/maps
+cp data/maps/bomb_s.map integration_test/data/maps
 cd integration_test || exit 1
 
 {
@@ -247,7 +246,7 @@ echo "stoprecord" > client1.fifo
 sleep 1
 
 echo "[*] Test map change"
-echo "rcon sv_map Tutorial" > client1.fifo
+echo "rcon sv_map bomb_s" > client1.fifo
 if [ "$arg_valgrind_memcheck" == "1" ]; then
 	sleep 60
 else

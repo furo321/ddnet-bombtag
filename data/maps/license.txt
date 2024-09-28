@@ -1,19 +1,31 @@
-Gold Mine:
-Copyright <BµmM>
+bombtag1:
+Cellegen
+
+bombtag2:
+Cellegen
+
+bombtag3:
+Cellegen
+
+bombtag4:
+Cellegen
+
+bombtag_small:
+Copyright furo
+WTFPL license
+
+bomb_retro:
+Copyright Souly
 CC-BY-SA license
 
-LearnToPlay:
-Copyright Tridemy & Cøke
+Linear Bombtag:
+Copyright Souly & louis
 CC-BY-SA license
 
-Sunny Side Up:
-Copyright Ravie
-CC-BY-SA license, grass_main is redrawn from original Teeworlds grass_main mapres (Apache 2.0 license)
-
-Tsunami:
-Copyright louis
+bomb_bomberman:
+Copyright Souly
 CC-BY-SA license
 
-Tutorial:
-Copyright unique2 & Alisa
+bomb_bluehour:
+Copyright Souly
 CC-BY-SA license
