@@ -1,8 +1,8 @@
 #include "Bomb.h"
-#include "base/system.h"
-#include <engine/shared/linereader.h>
+
 #include <base/color.h>
 #include <engine/shared/config.h>
+#include <engine/shared/linereader.h>
 #include <engine/shared/protocol.h>
 #include <game/gamecore.h>
 #include <game/generated/protocol.h>
@@ -279,7 +279,7 @@ bool CGameControllerBomb::CanJoinTeam(int Team, int NotThisId, char *pErrorReaso
 
 void CGameControllerBomb::OnTakeDamage(int Dmg, int From, int To, int Weapon)
 {
-	if(From == To)
+	if(From == To || From == -1 || To == -1)
 		return;
 
 	if(Weapon < 0)
