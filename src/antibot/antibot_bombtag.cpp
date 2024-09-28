@@ -1,7 +1,6 @@
 #include <antibot/antibot_data.h>
 #include <base/system.h>
 #include <engine/shared/packer.h>
-#include <engine/shared/protocol.h>
 #include <game/gamecore.h>
 #define ANTIBOTAPI DYNAMIC_EXPORT
 
