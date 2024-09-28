@@ -124,8 +124,26 @@ bool AntibotOnEngineClientMessage(int ClientId, const void *pData, int Size, int
 			return false;
 
 		CNetMsg_Cl_Say *pMsg = (CNetMsg_Cl_Say *)pRawMsg;
-		if(str_find_nocase(pMsg->m_pMessage, "krxclient.xyz"))
+		char aTrimmed[1024];
+		str_copy(aTrimmed, str_utf8_skip_whitespaces(pMsg->m_pMessage));
+		str_utf8_trim_right(aTrimmed);
+
+		int aSkeleton[1024];
+		int SkeletonLength = str_utf8_to_skeleton(aTrimmed, aSkeleton, std::size(aSkeleton));
+
+		char aSkeletonString[1024];
+		for(int i = 0; i < 1024; i++)
 		{
+			str_utf8_encode(&aSkeletonString[i], aSkeleton[i]);
+		}
+		aSkeletonString[SkeletonLength] = '\0';
+
+		if(str_find_nocase(aSkeletonString, "krxciient.xyz") || str_find_nocase(aSkeletonString, "krxclient.xyz"))
+		{
+			char aBuf[1024];
+			str_format(aBuf, sizeof(aBuf), "Autobanned '%s' with message '%s'", g_pRoundData->m_aCharacters[ClientId].m_aName, pMsg->m_pMessage);
+			g_pData->m_pfnLog(aBuf, g_pData->m_pUser);
+
 			g_pData->m_pfnBan(ClientId, 0, "Bot detected", g_pData->m_pUser);
 			return true;
 		}
