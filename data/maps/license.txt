@@ -29,3 +29,7 @@ CC-BY-SA license
 bomb_bluehour:
 Copyright Souly
 CC-BY-SA license
+
+bombcat:
+Copyright catseyenebulous
+CC-BY license

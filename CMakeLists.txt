@@ -1543,6 +1543,7 @@ set(EXPECTED_DATA
   maps/bomb_bomberman.map
   maps/bomb_retro.map
   maps/bomb_s.map
+  maps/bombcat.map
   maps/bombtag1.map
   maps/bombtag2.map
   maps/bombtag3.map
