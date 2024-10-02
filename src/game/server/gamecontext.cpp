@@ -4500,7 +4500,15 @@ bool CGameContext::IsClientReady(int ClientId) const
 
 bool CGameContext::IsClientPlayer(int ClientId) const
 {
-	return m_apPlayers[ClientId] && m_apPlayers[ClientId]->GetTeam() != TEAM_SPECTATORS;
+	if(!str_comp(g_Config.m_SvGametype, "bomb") && m_pController)
+	{
+		CGameControllerBomb *pController = (CGameControllerBomb *)m_pController;
+		return m_apPlayers[ClientId] && pController->m_aPlayers[ClientId].m_State >= CGameControllerBomb::STATE_ACTIVE;
+	}
+	else
+	{
+		return m_apPlayers[ClientId] && m_apPlayers[ClientId]->GetTeam() != TEAM_SPECTATORS;
+	}
 }
 
 CUuid CGameContext::GameUuid() const { return m_GameUuid; }
@@ -5009,16 +5017,37 @@ void CGameContext::OnUpdatePlayerServerInfo(CJsonStringWriter *pJSonWriter, int 
 	// 0.6
 	if(!Server()->IsSixup(Id))
 	{
-		pJSonWriter->WriteAttribute("name");
-		pJSonWriter->WriteStrValue(TeeInfo.m_aSkinName);
-
-		if(TeeInfo.m_UseCustomColor)
+		if(!str_comp(g_Config.m_SvGametype, "bomb") && m_pController)
 		{
-			pJSonWriter->WriteAttribute("color_body");
-			pJSonWriter->WriteIntValue(TeeInfo.m_ColorBody);
+			CGameControllerBomb *pController = (CGameControllerBomb *)m_pController;
 
-			pJSonWriter->WriteAttribute("color_feet");
-			pJSonWriter->WriteIntValue(TeeInfo.m_ColorFeet);
+			CGameControllerBomb::CSkinInfo RealSkin = pController->m_aPlayers[Id].m_RealSkin;
+
+			pJSonWriter->WriteAttribute("name");
+			pJSonWriter->WriteStrValue(RealSkin.m_aSkinName);
+
+			if(RealSkin.m_UseCustomColor)
+			{
+				pJSonWriter->WriteAttribute("color_body");
+				pJSonWriter->WriteIntValue(RealSkin.m_aSkinBodyColor);
+
+				pJSonWriter->WriteAttribute("color_feet");
+				pJSonWriter->WriteIntValue(RealSkin.m_aSkinFeetColor);
+			}
+		}
+		else
+		{
+			pJSonWriter->WriteAttribute("name");
+			pJSonWriter->WriteStrValue(TeeInfo.m_aSkinName);
+
+			if(TeeInfo.m_UseCustomColor)
+			{
+				pJSonWriter->WriteAttribute("color_body");
+				pJSonWriter->WriteIntValue(TeeInfo.m_ColorBody);
+
+				pJSonWriter->WriteAttribute("color_feet");
+				pJSonWriter->WriteIntValue(TeeInfo.m_ColorFeet);
+			}
 		}
 	}
 	// 0.7
