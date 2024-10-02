@@ -4500,7 +4500,7 @@ bool CGameContext::IsClientReady(int ClientId) const
 
 bool CGameContext::IsClientPlayer(int ClientId) const
 {
-	if(!str_comp(g_Config.m_SvGametype, "bomb") && m_pController)
+	if(!str_comp(g_Config.m_SvGametype, "bomb"))
 	{
 		CGameControllerBomb *pController = (CGameControllerBomb *)m_pController;
 		return m_apPlayers[ClientId] && pController->m_aPlayers[ClientId].m_State >= CGameControllerBomb::STATE_ACTIVE;
@@ -5017,7 +5017,7 @@ void CGameContext::OnUpdatePlayerServerInfo(CJsonStringWriter *pJSonWriter, int 
 	// 0.6
 	if(!Server()->IsSixup(Id))
 	{
-		if(!str_comp(g_Config.m_SvGametype, "bomb") && m_pController)
+		if(!str_comp(g_Config.m_SvGametype, "bomb"))
 		{
 			CGameControllerBomb *pController = (CGameControllerBomb *)m_pController;
 
