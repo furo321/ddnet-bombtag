@@ -478,6 +478,9 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 
 void CGameControllerBomb::ExplodeBomb(int ClientId)
 {
+	if(!GameServer()->m_apPlayers[ClientId])
+		return;
+
 	GameServer()->CreateExplosion(GameServer()->m_apPlayers[ClientId]->m_ViewPos, ClientId, WEAPON_GAME, true, 0);
 	GameServer()->CreateSound(GameServer()->m_apPlayers[ClientId]->m_ViewPos, SOUND_GRENADE_EXPLODE);
 	m_aPlayers[ClientId].m_State = STATE_ACTIVE;
