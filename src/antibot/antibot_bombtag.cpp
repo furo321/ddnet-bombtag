@@ -11,6 +11,7 @@
 static CAntibotData *g_pData;
 static int g_Clicks[ANTIBOT_MAX_CLIENTS][SERVER_TICK_SPEED];
 static CAntibotRoundData *g_pRoundData;
+static int g_KickId;
 
 extern "C" {
 
@@ -22,6 +23,7 @@ void AntibotInit(CAntibotData *pCallbackData)
 {
 	g_pData = pCallbackData;
 	g_pRoundData = 0;
+	g_KickId = -1;
 	g_pData->m_pfnLog("bombtag antibot initialized", g_pData->m_pUser);
 }
 
@@ -48,6 +50,8 @@ void AntibotOnPlayerInit(int /*ClientId*/) {}
 void AntibotOnPlayerDestroy(int ClientId)
 {
 	std::fill(std::begin(g_Clicks[ClientId]), std::end(g_Clicks[ClientId]), 0);
+	if(g_KickId == ClientId)
+		g_KickId = -1;
 }
 void AntibotOnSpawn(int /*ClientId*/) {}
 void AntibotOnHammerFireReloading(int /*ClientId*/) {}
@@ -81,8 +85,9 @@ void AntibotOnDirectInput(int ClientId)
 		g_pData->m_pfnLog(aBuf, g_pData->m_pUser);
 		if(ClicksPerSecond >= 17)
 		{
-			str_format(aBuf, sizeof(aBuf), "Autoclicker detected.", ClicksPerSecond);
-			g_pData->m_pfnKick(ClientId, aBuf, g_pData->m_pUser);
+			// Mark the player as someone who should be kicked
+			// Kicking here leads to weird crashes in "OnPredictedEarlyInput".
+			g_KickId = ClientId;
 		}
 	}
 }
@@ -94,7 +99,18 @@ void AntibotOnCharacterTick(int ClientId)
 }
 
 void AntibotOnHookAttach(int /*ClientId*/, bool /*Player*/) {}
-void AntibotOnEngineTick(void) {}
+void AntibotOnEngineTick(void)
+{
+	if(!g_pData)
+		return;
+
+	if(g_KickId != -1)
+	{
+		g_pData->m_pfnKick(g_KickId, "Autoclicker detected.", g_pData->m_pUser);
+		g_KickId = -1;
+	}
+}
+
 void AntibotOnEngineClientJoin(int /*ClientId*/, bool /*Sixup*/) {}
 void AntibotOnEngineClientDrop(int /*ClientId*/, const char * /*pReason*/) {}
 
