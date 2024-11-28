@@ -18,6 +18,7 @@ Bombtag has a few options you can use to configure and tweak the gameplay. They'
 - `bombtag_score_for_surviving`, The amount of score given for players surviving a round. Default: 0
 - `bombtag_score_for_winning`, The amount of score given for the player who wins the round. Default: 1
 - `bombtag_seconds_to_explosion`, The amount of seconds till the bomb explodes. Default: 15
+- `bombtag_minimum_seconds_to_explosion`, The minimum amount of seconds a tee's bomb timer will have after getting bomb. Default: 1
 - `bombtag_bomb_damage`, The amount of seconds removed from a bombs timer when hit by someone. Default: 1
 - `bombtag_hammer_freeze`, The amount of ticks of freeze inflicted when hitting an alive player. (0 to disable). Default: 50
 - `bombtag_bomb_weapon`, Which weapon should the bomb be given? 0 - Hammer, 1 - Gun, 2 - Shotgun, 3 - Grenade, 4 - Laser, 5 - Ninja. Default: 0
