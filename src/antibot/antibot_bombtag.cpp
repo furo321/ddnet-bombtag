@@ -153,13 +153,29 @@ bool AntibotOnEngineClientMessage(int ClientId, const void *pData, int Size, int
 		}
 		aSkeletonString[SkeletonLength] = '\0';
 
-		if(str_find_nocase(aSkeletonString, "krxciient.xyz") || str_find_nocase(aSkeletonString, "krxclient.xyz"))
+		char aNonAsciiStripped[1024];
+		int Len = 0;
+
+		for(char i : aSkeletonString)
+		{
+			if(i == '\0')
+				break;
+
+			if((i >= 'a' && i <= 'z') || (i >= 'A' && i <= 'Z'))
+			{
+				aNonAsciiStripped[Len] = i;
+				Len++;
+			}
+		}
+
+		if(str_find_nocase(aNonAsciiStripped, "krxciientxyz") || str_find_nocase(aNonAsciiStripped, "krxclientxyz"))
 		{
 			char aBuf[1024];
 			str_format(aBuf, sizeof(aBuf), "Autobanned '%s' with message '%s'", g_pRoundData->m_aCharacters[ClientId].m_aName, pMsg->m_pMessage);
 			g_pData->m_pfnLog(aBuf, g_pData->m_pUser);
 
 			g_pData->m_pfnBan(ClientId, 0, "Bot detected", g_pData->m_pUser);
+			//g_pData->m_pfnKick(ClientId, "Bot detected", g_pData->m_pUser);
 			return true;
 		}
 	}
