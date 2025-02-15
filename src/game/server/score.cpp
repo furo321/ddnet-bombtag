@@ -394,3 +394,24 @@ void CScore::GetSaves(int ClientId)
 		return;
 	ExecPlayerThread(CScoreWorker::GetSaves, "get saves", ClientId, "", 0);
 }
+
+void CScore::SaveStats(const char *pName, bool RoundWin)
+{
+	auto Tmp = std::make_unique<CSqlSaveStats>();
+	str_copy(Tmp->m_aName, pName);
+	Tmp->m_RoundWin = RoundWin;
+
+	m_pPool->ExecuteWrite(CScoreWorker::SaveStats, std::move(Tmp), "save score");
+}
+
+void CScore::LoadPlayerRoundsWon(int ClientId, const char *pName)
+{
+	ExecPlayerThread(CScoreWorker::LoadPlayerRoundsWon, "load player data", ClientId, pName, 0);
+}
+
+void CScore::ShowStats(int ClientId, const char *pName)
+{
+	if(RateLimitPlayer(ClientId))
+		return;
+	ExecPlayerThread(CScoreWorker::ShowStats, "show rank", ClientId, pName, 0);
+}

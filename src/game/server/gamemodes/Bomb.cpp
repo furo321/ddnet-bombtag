@@ -1,4 +1,5 @@
 #include "Bomb.h"
+#include "game/server/score.h"
 
 #include <base/color.h>
 #include <engine/shared/config.h>
@@ -68,6 +69,7 @@ int CGameControllerBomb::OnCharacterDeath(CCharacter *pVictim, CPlayer *pKiller,
 void CGameControllerBomb::OnPlayerConnect(CPlayer *pPlayer)
 {
 	IGameController::OnPlayerConnect(pPlayer);
+	GameServer()->Score()->LoadPlayerRoundsWon(pPlayer->GetCid(), Server()->ClientName(pPlayer->GetCid()));
 	int ClientId = pPlayer->GetCid();
 
 	if(pPlayer->GetTeam() == TEAM_SPECTATORS && m_aPlayers[ClientId].m_State != STATE_ACTIVE)
@@ -75,7 +77,6 @@ void CGameControllerBomb::OnPlayerConnect(CPlayer *pPlayer)
 
 	if(!Server()->ClientPrevIngame(ClientId))
 	{
-		m_aPlayers[pPlayer->GetCid()].m_Score = 0;
 		char aBuf[512];
 		str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s", Server()->ClientName(ClientId), GetTeamName(pPlayer->GetTeam()));
 		GameServer()->SendChat(-1, TEAM_ALL, aBuf);
@@ -86,7 +87,6 @@ void CGameControllerBomb::OnPlayerConnect(CPlayer *pPlayer)
 		GameServer()->SendBroadcast("There's currently a game in progress, you'll join once the round is over!", ClientId);
 	}
 	SetSkin(pPlayer);
-	pPlayer->m_Score = m_aPlayers[pPlayer->GetCid()].m_Score;
 }
 
 void CGameControllerBomb::OnPlayerDisconnect(CPlayer *pPlayer, const char *pReason)
@@ -469,14 +469,13 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 
 	if(!RealEnd)
 	{
-		for(int i = 0; i < MAX_CLIENTS; i++)
-		{
-			if(m_aPlayers[i].m_State == STATE_ALIVE)
-			{
-				m_aPlayers[i].m_Score += g_Config.m_BombtagScoreForSuriving;
-				GameServer()->m_apPlayers[i]->m_Score = m_aPlayers[i].m_Score;
-			}
-		}
+		// for(int i = 0; i < MAX_CLIENTS; i++)
+		// {
+		// 	if(m_aPlayers[i].m_State == STATE_ALIVE)
+		// 	{
+		// 		GameServer()->m_apPlayers[i]->m_Score = GameServer()->m_apPlayers[i]->m_Score.value_or(0) + 1;
+		// 	}
+		// }
 		const int BombsPerPlayer = g_Config.m_BombtagBombsPerPlayer;
 		MakeRandomBomb(std::ceil((Alive / (float)BombsPerPlayer) - (BombsPerPlayer == 1 ? 1 : 0)));
 	}
@@ -489,8 +488,8 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 				char aBuf[128];
 				str_format(aBuf, sizeof(aBuf), "'%s' won the round!", Server()->ClientName(i));
 				GameServer()->SendChat(-1, TEAM_ALL, aBuf);
-				m_aPlayers[i].m_Score += g_Config.m_BombtagScoreForWinning;
-				GameServer()->m_apPlayers[i]->m_Score = m_aPlayers[i].m_Score;
+				GameServer()->m_apPlayers[i]->m_Score = GameServer()->m_apPlayers[i]->m_Score.value_or(0) + 1;
+				GameServer()->Score()->SaveStats(Server()->ClientName(i), true);
 				if(g_Config.m_BombtagMysteryChance && rand() % 101 <= g_Config.m_BombtagMysteryChance)
 				{
 					const char *pLine = GameServer()->Server()->GetMysteryRoundLine();
@@ -545,6 +544,7 @@ void CGameControllerBomb::EliminatePlayer(int ClientId)
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "'%s' eliminated!", Server()->ClientName(ClientId));
 	GameServer()->SendChat(-1, TEAM_ALL, aBuf);
+	GameServer()->Score()->SaveStats(Server()->ClientName(ClientId), false);
 
 	m_aPlayers[ClientId].m_Bomb = false;
 	m_aPlayers[ClientId].m_State = STATE_ACTIVE;

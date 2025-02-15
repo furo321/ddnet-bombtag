@@ -1664,9 +1664,6 @@ bool CGameContext::OnClientDataPersist(int ClientId, void *pData)
 			pPersistent->m_IsSpectator = true;
 		else
 			pPersistent->m_IsSpectator = false;
-
-		// Save your score
-		pPersistent->m_Score = pController->m_aPlayers[ClientId].m_Score;
 	}
 	else
 		pPersistent->m_IsSpectator = m_apPlayers[ClientId]->GetTeam() == TEAM_SPECTATORS;
@@ -1679,12 +1676,10 @@ void CGameContext::OnClientConnected(int ClientId, void *pData)
 	CPersistentClientData *pPersistentData = (CPersistentClientData *)pData;
 	bool Spec = false;
 	bool Afk = true;
-	int Score = 0;
 	if(pPersistentData)
 	{
 		Spec = pPersistentData->m_IsSpectator;
 		Afk = pPersistentData->m_IsAfk;
-		Score = pPersistentData->m_Score;
 	}
 
 	{
@@ -1712,13 +1707,6 @@ void CGameContext::OnClientConnected(int ClientId, void *pData)
 	m_apPlayers[ClientId] = new(ClientId) CPlayer(this, NextUniqueClientId, ClientId, StartTeam);
 	m_apPlayers[ClientId]->SetInitialAfk(Afk);
 	NextUniqueClientId += 1;
-
-	if(!str_comp(Config()->m_SvGametype, "bomb"))
-	{
-		CGameControllerBomb *pController = (CGameControllerBomb *)m_pController;
-		// Load score
-		pController->m_aPlayers[ClientId].m_Score = Score;
-	}
 
 	SendMotd(ClientId);
 	SendSettings(ClientId);
@@ -2658,9 +2646,8 @@ void CGameContext::OnChangeInfoNetMessage(const CNetMsg_Cl_ChangeInfo *pMsg, int
 		SendChat(-1, TEAM_ALL, aChatText);
 
 		// reload scores
-		Score()->PlayerData(ClientId)->Reset();
 		m_apPlayers[ClientId]->m_Score.reset();
-		Score()->LoadPlayerData(ClientId);
+		Score()->LoadPlayerRoundsWon(ClientId, Server()->ClientName(ClientId));
 
 		SixupNeedsUpdate = true;
 
@@ -3892,6 +3879,8 @@ void CGameContext::RegisterChatCommands()
 	// Console()->Register("unendless", "", CFGFLAG_CHAT | CMDFLAG_PRACTICE, ConPracticeUnEndlessHook, this, "Removes endless hook from you");
 	// Console()->Register("invincible", "?i['0'|'1']", CFGFLAG_CHAT | CMDFLAG_PRACTICE, ConPracticeToggleInvincible, this, "Toggles invincible mode");
 	// Console()->Register("kill", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConProtectedKill, this, "Kill yourself when kill-protected during a long game (use f1, kill for regular kill)");
+
+	Console()->Register("stats", "?r[player name]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConStats, this, "Show the stats of the player with the specified name or your name");
 }
 
 void CGameContext::OnInit(const void *pPersistentData)

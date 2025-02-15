@@ -536,6 +536,7 @@ private:
 	// Bombtag
 	static void ConReloadMysteryRounds(IConsole::IResult *pResult, void *pUserData);
 	static void ConEnqueueMap(IConsole::IResult *pResult, void *pUserData);
+	static void ConStats(IConsole::IResult *pResult, void *pUserData);
 
 	CCharacter *GetPracticeCharacter(IConsole::IResult *pResult);
 

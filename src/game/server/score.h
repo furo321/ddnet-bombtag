@@ -72,6 +72,10 @@ public:
 	void SaveTeam(int ClientId, const char *pCode, const char *pServer);
 	void LoadTeam(const char *pCode, int ClientId);
 	void GetSaves(int ClientId);
+
+	void SaveStats(const char *pName, bool RoundWin);
+	void LoadPlayerRoundsWon(int ClientId, const char *pName);
+	void ShowStats(int ClientId, const char *pName);
 };
 
 #endif // GAME_SERVER_SCORE_H

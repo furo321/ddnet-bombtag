@@ -48,7 +48,6 @@ public:
 	};
 	struct
 	{
-		int m_Score = 0;
 		int m_State = STATE_NONE;
 		int m_Tick = 0;
 		int m_TicksAfk = 0;

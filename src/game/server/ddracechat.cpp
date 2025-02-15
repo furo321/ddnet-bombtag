@@ -2356,3 +2356,18 @@ void CGameContext::ConTimeCP(IConsole::IResult *pResult, void *pUserData)
 	const char *pName = pResult->GetString(0);
 	pSelf->Score()->LoadPlayerTimeCp(pResult->m_ClientId, pName);
 }
+
+void CGameContext::ConStats(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if(!CheckClientId(pResult->m_ClientId))
+		return;
+
+	if(pResult->NumArguments() > 0)
+	{
+		pSelf->Score()->ShowStats(pResult->m_ClientId, pResult->GetString(0));
+	}
+	else
+		pSelf->Score()->ShowStats(pResult->m_ClientId,
+			pSelf->Server()->ClientName(pResult->m_ClientId));
+}

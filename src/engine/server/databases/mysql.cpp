@@ -103,6 +103,7 @@ public:
 	int GetBlob(int Col, unsigned char *pBuffer, int BufferSize) override;
 
 	bool AddPoints(const char *pPlayer, int Points, char *pError, int ErrorSize) override;
+	bool SaveStats(const char *pPlayer, bool RoundWin, char *pError, int ErrorSize) override;
 
 private:
 	class CStmtDeleter
@@ -294,17 +295,20 @@ bool CMysqlConnection::ConnectImpl()
 		char aCreateMaps[1024];
 		char aCreateSaves[1024];
 		char aCreatePoints[1024];
+		char aCreateStats[1024];
 		FormatCreateRace(aCreateRace, sizeof(aCreateRace), /* Backup */ false);
 		FormatCreateTeamrace(aCreateTeamrace, sizeof(aCreateTeamrace), "VARBINARY(16)", /* Backup */ false);
 		FormatCreateMaps(aCreateMaps, sizeof(aCreateMaps));
 		FormatCreateSaves(aCreateSaves, sizeof(aCreateSaves), /* Backup */ false);
 		FormatCreatePoints(aCreatePoints, sizeof(aCreatePoints));
+		FormatCreateStats(aCreateStats, sizeof(aCreateStats));
 
 		if(PrepareAndExecuteStatement(aCreateRace) ||
 			PrepareAndExecuteStatement(aCreateTeamrace) ||
 			PrepareAndExecuteStatement(aCreateMaps) ||
 			PrepareAndExecuteStatement(aCreateSaves) ||
-			PrepareAndExecuteStatement(aCreatePoints))
+			PrepareAndExecuteStatement(aCreatePoints) ||
+			PrepareAndExecuteStatement(aCreateStats))
 		{
 			return true;
 		}
@@ -701,6 +705,26 @@ bool CMysqlConnection::AddPoints(const char *pPlayer, int Points, char *pError, 
 	BindString(1, pPlayer);
 	BindInt(2, Points);
 	BindInt(3, Points);
+	int NumUpdated;
+	return ExecuteUpdate(&NumUpdated, pError, ErrorSize);
+}
+
+bool CMysqlConnection::SaveStats(const char *pPlayer, bool RoundWin, char *pError, int ErrorSize)
+{
+	printf("test: %s\n", pPlayer);
+	char aBuf[512];
+	str_format(aBuf, sizeof(aBuf),
+		"INSERT INTO %s_stats(Name, RoundsWon, RoundsPlayed) "
+		"VALUES (?, ?, 1) "
+		"ON DUPLICATE KEY UPDATE RoundsWon=RoundsWon+?, RoundsPlayed=RoundsPlayed+1",
+		GetPrefix());
+	if(PrepareStatement(aBuf, pError, ErrorSize))
+	{
+		return true;
+	}
+	BindString(1, pPlayer);
+	BindInt(2, RoundWin);
+	BindInt(3, RoundWin);
 	int NumUpdated;
 	return ExecuteUpdate(&NumUpdated, pError, ErrorSize);
 }

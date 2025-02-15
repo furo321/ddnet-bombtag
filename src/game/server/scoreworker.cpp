@@ -50,6 +50,9 @@ void CScorePlayerResult::SetVariant(Variant v)
 		for(float &TimeCp : m_Data.m_Info.m_aTimeCp)
 			TimeCp = 0;
 		break;
+	case PLAYER_ROUNDSWON:
+		m_Data.m_Info.m_RoundsWon = 0;
+		break;
 	}
 }
 
@@ -1943,6 +1946,98 @@ bool CScoreWorker::GetSaves(IDbConnection *pSqlServer, const ISqlData *pGameData
 			pData->m_aRequestingPlayer,
 			NumSaves, NumSaves == 1 ? "" : "s",
 			pData->m_aMap, aLastSavedString);
+	}
+	return false;
+}
+
+bool CScoreWorker::SaveStats(IDbConnection *pSqlServer, const ISqlData *pGameData, Write w, char *pError, int ErrorSize)
+{
+	const auto *pData = dynamic_cast<const CSqlSaveStats *>(pGameData);
+	if(pSqlServer->SaveStats(pData->m_aName, pData->m_RoundWin, pError, ErrorSize))
+	{
+		return true;
+	}
+	return false;
+}
+
+bool CScoreWorker::LoadPlayerRoundsWon(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize)
+{
+	const auto *pData = dynamic_cast<const CSqlPlayerRequest *>(pGameData);
+	auto *pResult = dynamic_cast<CScorePlayerResult *>(pGameData->m_pResult.get());
+
+	char aBuf[1024];
+	str_format(aBuf, sizeof(aBuf),
+		"SELECT RoundsWon "
+		"FROM %s_stats "
+		"WHERE Name = ? "
+		"LIMIT 1",
+		pSqlServer->GetPrefix());
+	if(pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
+	{
+		return true;
+	}
+
+	pSqlServer->BindString(1, pData->m_aName);
+
+	bool End;
+	if(pSqlServer->Step(&End, pError, ErrorSize))
+	{
+		return true;
+	}
+	if(!End)
+	{
+		pResult->SetVariant(CScorePlayerResult::PLAYER_ROUNDSWON);
+		pResult->m_Data.m_Info.m_RoundsWon = pSqlServer->GetInt(1);
+	}
+	return false;
+}
+
+bool CScoreWorker::ShowStats(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize)
+{
+	const auto *pData = dynamic_cast<const CSqlPlayerRequest *>(pGameData);
+	auto *pResult = dynamic_cast<CScorePlayerResult *>(pGameData->m_pResult.get());
+
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf),
+		"SELECT RoundsWon, RoundsPlayed "
+		"FROM %s_stats "
+		"WHERE Name = ?",
+		pSqlServer->GetPrefix());
+
+	if(pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
+	{
+		return true;
+	}
+	pSqlServer->BindString(1, pData->m_aName);
+
+	bool End;
+	if(pSqlServer->Step(&End, pError, ErrorSize))
+	{
+		return true;
+	}
+
+	if(!End)
+	{
+		int RoundsWon = pSqlServer->GetInt(1);
+		int RoundsPlayed = pSqlServer->GetInt(2);
+
+		if(str_comp_nocase(pData->m_aRequestingPlayer, pData->m_aName) == 0)
+		{
+			str_format(pResult->m_Data.m_aaMessages[0], sizeof(pResult->m_Data.m_aaMessages[0]),
+				"%s has won %d rounds of bombtag and played a total of %d with a win rate of %.02f%%",
+				pData->m_aName, RoundsWon, RoundsPlayed, ((float)RoundsWon / (float)RoundsPlayed) * 100.0f);
+		}
+		else
+		{
+			str_format(pResult->m_Data.m_aaMessages[0], sizeof(pResult->m_Data.m_aaMessages[0]),
+				"%s has won %d rounds of bombtag and played a total of %d with a win rate of %.02f%% requested by %s",
+				pData->m_aName, RoundsWon, RoundsPlayed, ((float)RoundsWon / (float)RoundsPlayed) * 100.0f, pData->m_aRequestingPlayer);
+		}
+	}
+	else
+	{
+		str_format(pResult->m_Data.m_aaMessages[0], sizeof(pResult->m_Data.m_aaMessages[0]),
+			"%s has not played any rounds of bombtag", pData->m_aName);
 	}
 	return false;
 }
