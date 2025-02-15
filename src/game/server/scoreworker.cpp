@@ -2029,6 +2029,7 @@ bool CScoreWorker::ShowStats(IDbConnection *pSqlServer, const ISqlData *pGameDat
 		}
 		else
 		{
+			pResult->m_MessageKind = CScorePlayerResult::ALL;
 			str_format(pResult->m_Data.m_aaMessages[0], sizeof(pResult->m_Data.m_aaMessages[0]),
 				"%s has won %d rounds of bombtag and played a total of %d with a win rate of %.02f%% requested by %s",
 				pData->m_aName, RoundsWon, RoundsPlayed, ((float)RoundsWon / (float)RoundsPlayed) * 100.0f, pData->m_aRequestingPlayer);
