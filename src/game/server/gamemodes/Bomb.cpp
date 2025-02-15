@@ -1,5 +1,4 @@
 #include "Bomb.h"
-#include "game/server/score.h"
 
 #include <base/color.h>
 #include <engine/shared/config.h>
@@ -9,6 +8,7 @@
 #include <game/generated/protocol.h>
 #include <game/server/entities/character.h>
 #include <game/server/player.h>
+#include <game/server/score.h>
 #include <random>
 
 // Exchange this to a string that identifies your game mode.
@@ -129,7 +129,8 @@ void CGameControllerBomb::DoAfkLogic()
 		if(m_aPlayers[pPlayer->GetCid()].m_State == STATE_SPECTATING)
 			continue;
 
-		int AfkHash = pChr->GetCore().m_Angle * pChr->GetCore().m_Direction * pChr->GetCore().m_Jumps;
+		int Angle = (std::atan2(pChr->Core()->m_Input.m_TargetX, pChr->Core()->m_Input.m_TargetY) * 100.0f);
+		int AfkHash = pChr->Core()->m_Input.m_PlayerFlags + Angle + pChr->Core()->m_Direction + pChr->Core()->m_Jumps;
 
 		if(AfkHash == m_aPlayers[pPlayer->GetCid()].m_AfkHash)
 		{
