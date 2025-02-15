@@ -112,9 +112,51 @@ void CGameControllerBomb::OnReset()
 	}
 }
 
+void CGameControllerBomb::DoAfkLogic()
+{
+	if(!m_RoundActive)
+		return;
+
+	for(auto &pPlayer : GameServer()->m_apPlayers)
+	{
+		if(!pPlayer)
+			continue;
+
+		CCharacter *pChr = pPlayer->GetCharacter();
+		if(!pChr)
+			continue;
+
+		if(m_aPlayers[pPlayer->GetCid()].m_State == STATE_SPECTATING)
+			continue;
+
+		int AfkHash = pChr->GetCore().m_Angle * pChr->GetCore().m_Direction * pChr->GetCore().m_Jumps;
+
+		if(AfkHash == m_aPlayers[pPlayer->GetCid()].m_AfkHash)
+		{
+			m_aPlayers[pPlayer->GetCid()].m_TicksAfk++;
+		}
+		else
+		{
+			m_aPlayers[pPlayer->GetCid()].m_TicksAfk = 0;
+		}
+
+		m_aPlayers[pPlayer->GetCid()].m_AfkHash = AfkHash;
+		if(m_aPlayers[pPlayer->GetCid()].m_TicksAfk > 20 * SERVER_TICK_SPEED)
+		{
+			char aBuf[256];
+			str_format(aBuf, sizeof(aBuf), "'%s' has been moved to spectators due to inactivity.", Server()->ClientName(pPlayer->GetCid()));
+			GameServer()->SendChat(-1, TEAM_ALL, aBuf);
+			GameServer()->m_apPlayers[pPlayer->GetCid()]->SetTeam(TEAM_SPECTATORS, false);
+			m_aPlayers[pPlayer->GetCid()].m_TicksAfk = 0;
+			m_aPlayers[pPlayer->GetCid()].m_State = STATE_SPECTATING;
+		}
+	}
+}
+
 void CGameControllerBomb::Tick()
 {
 	IGameController::Tick();
+	DoAfkLogic();
 
 	// Change to enqueued map
 	if(!m_RoundActive && !m_Warmup && str_length(m_aEnqueuedMap))

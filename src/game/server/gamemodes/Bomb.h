@@ -51,6 +51,8 @@ public:
 		int m_Score = 0;
 		int m_State = STATE_NONE;
 		int m_Tick = 0;
+		int m_TicksAfk = 0;
+		int m_AfkHash = 0;
 		bool m_Bomb = false;
 		CSkinInfo m_RealSkin;
 	} m_aPlayers[MAX_CLIENTS];
@@ -67,6 +69,7 @@ public:
 	void ExplodeBomb(int ClientId);
 	void EliminatePlayer(int ClientId);
 	void UpdateTimer();
+	void DoAfkLogic();
 
 	void OnTakeDamage(int Dmg, int From, int To, int Weapon) override;
 	void OnSkinChange(const char *pSkin, bool UseCustomColor, int ColorBody, int ColorFeet, int ClientId) override;
