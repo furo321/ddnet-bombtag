@@ -27,5 +27,13 @@ Bombtag has a few options you can use to configure and tweak the gameplay. They'
 - `sv_mysteryrounds_filename`, File which contains mystery round commands, one round per line. Default: ""
 - `sv_mysteryrounds_reset_filename`, File which contains the commands to execute after a mystery round. Default: ""
 
+## Commands
+
+- `enqueue_map r[map]`, Adds a map to queue after the round has finished.
+- `reload_mysteryrounds`, Reloads the configuration file for mystery rounds.
+
+## Antibot
+Bombtag has a simple antibot which can be enabled using `-DANTIBOT=ON` in CMake. The antibot kicks people using autoclickers and permanently bans anyone who sends advertisements of a specific popular cheat client.
+
 ## Building
 This mod is based on DDRaceNetwork. You can use their instructions to learn how to build the project, [ddnet/ddnet](https://github.com/ddnet/ddnet).
