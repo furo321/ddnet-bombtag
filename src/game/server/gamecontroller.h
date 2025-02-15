@@ -158,6 +158,7 @@ public:
 	// Bombtag
 	virtual void OnSkinChange(const char *pSkin, bool UseCustomColor, int ColorBody, int ColorFeet, int ClientId);
 	virtual void OnTakeDamage(int Dmg, int From, int To, int Weapon);
+	char m_aEnqueuedMap[MAX_MAP_LENGTH];
 };
 
 #endif

@@ -41,6 +41,7 @@ IGameController::IGameController(class CGameContext *pGameServer) :
 	m_ForceBalanced = false;
 
 	m_CurrentRecord = 0;
+	str_copy(m_aEnqueuedMap, "");
 }
 
 IGameController::~IGameController() = default;

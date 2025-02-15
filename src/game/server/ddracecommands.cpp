@@ -929,6 +929,18 @@ void CGameContext::ConReloadMysteryRounds(IConsole::IResult *pResult, void *pUse
 	pSelf->Server()->ReadMysteryRoundsFile(g_Config.m_SvMysteryRoundsFileName);
 }
 
+void CGameContext::ConEnqueueMap(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if(pResult->GetString(0))
+	{
+		str_copy(pSelf->m_pController->m_aEnqueuedMap, pResult->GetString(0));
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "Enqueued the map '%s' to play after the round has finished", pResult->GetString(0));
+		pSelf->SendChat(-1, TEAM_ALL, aBuf);
+	}
+}
+
 void CGameContext::ConDumpAntibot(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;

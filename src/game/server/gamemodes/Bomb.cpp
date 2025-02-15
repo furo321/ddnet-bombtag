@@ -115,6 +115,15 @@ void CGameControllerBomb::OnReset()
 void CGameControllerBomb::Tick()
 {
 	IGameController::Tick();
+
+	// Change to enqueued map
+	if(!m_RoundActive && !m_Warmup && str_length(m_aEnqueuedMap))
+	{
+		Server()->ChangeMap(m_aEnqueuedMap);
+		str_copy(m_aEnqueuedMap, "");
+		return;
+	}
+
 	if(AmountOfPlayers(STATE_ACTIVE) == 1 && !m_RoundActive)
 	{
 		int Sequence = Server()->Tick() % (SERVER_TICK_SPEED * 3);
