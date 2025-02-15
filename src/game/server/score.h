@@ -76,6 +76,7 @@ public:
 	void SaveStats(const char *pName, bool RoundWin);
 	void LoadPlayerRoundsWon(int ClientId, const char *pName);
 	void ShowStats(int ClientId, const char *pName);
+	void ShowTopWins(int ClientId, int Offset);
 };
 
 #endif // GAME_SERVER_SCORE_H

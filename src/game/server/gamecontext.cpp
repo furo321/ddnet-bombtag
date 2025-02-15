@@ -3881,6 +3881,7 @@ void CGameContext::RegisterChatCommands()
 	// Console()->Register("kill", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConProtectedKill, this, "Kill yourself when kill-protected during a long game (use f1, kill for regular kill)");
 
 	Console()->Register("stats", "?r[player name]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConStats, this, "Show the stats of the player with the specified name or your name");
+	Console()->Register("top5wins", "?i[number]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConTopWins, this, "Shows five points of the global total wins ladder beginning with rank i (1 by default)");
 }
 
 void CGameContext::OnInit(const void *pPersistentData)

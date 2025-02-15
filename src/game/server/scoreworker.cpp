@@ -1999,16 +1999,19 @@ bool CScoreWorker::ShowStats(IDbConnection *pSqlServer, const ISqlData *pGameDat
 
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf),
-		"SELECT RoundsWon, RoundsPlayed "
-		"FROM %s_stats "
-		"WHERE Name = ?",
-		pSqlServer->GetPrefix());
+		"SELECT ("
+		"  SELECT COUNT(Name) + 1 FROM %s_stats WHERE RoundsWon > ("
+		"    SELECT RoundsWon FROM %s_stats WHERE Name = ?"
+		")) as Ranking, RoundsWon, RoundsPlayed, Name "
+		"FROM %s_stats WHERE Name = ?",
+		pSqlServer->GetPrefix(), pSqlServer->GetPrefix(), pSqlServer->GetPrefix());
 
 	if(pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
 	{
 		return true;
 	}
 	pSqlServer->BindString(1, pData->m_aName);
+	pSqlServer->BindString(2, pData->m_aName);
 
 	bool End;
 	if(pSqlServer->Step(&End, pError, ErrorSize))
@@ -2018,21 +2021,22 @@ bool CScoreWorker::ShowStats(IDbConnection *pSqlServer, const ISqlData *pGameDat
 
 	if(!End)
 	{
-		int RoundsWon = pSqlServer->GetInt(1);
-		int RoundsPlayed = pSqlServer->GetInt(2);
+		int Ranking = pSqlServer->GetInt(1);
+		int RoundsWon = pSqlServer->GetInt(2);
+		int RoundsPlayed = pSqlServer->GetInt(3);
 
 		if(str_comp_nocase(pData->m_aRequestingPlayer, pData->m_aName) == 0)
 		{
 			str_format(pResult->m_Data.m_aaMessages[0], sizeof(pResult->m_Data.m_aaMessages[0]),
-				"%s has won %d rounds of bombtag and played a total of %d with a win rate of %.02f%%",
-				pData->m_aName, RoundsWon, RoundsPlayed, ((float)RoundsWon / (float)RoundsPlayed) * 100.0f);
+				"%d. %s has won %d rounds of bombtag and played a total of %d with a win rate of %.02f%%",
+				Ranking, pData->m_aName, RoundsWon, RoundsPlayed, ((float)RoundsWon / (float)RoundsPlayed) * 100.0f);
 		}
 		else
 		{
 			pResult->m_MessageKind = CScorePlayerResult::ALL;
 			str_format(pResult->m_Data.m_aaMessages[0], sizeof(pResult->m_Data.m_aaMessages[0]),
-				"%s has won %d rounds of bombtag and played a total of %d with a win rate of %.02f%% requested by %s",
-				pData->m_aName, RoundsWon, RoundsPlayed, ((float)RoundsWon / (float)RoundsPlayed) * 100.0f, pData->m_aRequestingPlayer);
+				"%d. %s has won %d rounds of bombtag and played a total of %d with a win rate of %.02f%% requested by %s",
+				Ranking, pData->m_aName, RoundsWon, RoundsPlayed, ((float)RoundsWon / (float)RoundsPlayed) * 100.0f, pData->m_aRequestingPlayer);
 		}
 	}
 	else
@@ -2040,5 +2044,55 @@ bool CScoreWorker::ShowStats(IDbConnection *pSqlServer, const ISqlData *pGameDat
 		str_format(pResult->m_Data.m_aaMessages[0], sizeof(pResult->m_Data.m_aaMessages[0]),
 			"%s has not played any rounds of bombtag", pData->m_aName);
 	}
+	return false;
+}
+
+bool CScoreWorker::ShowTopWins(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize)
+{
+	const auto *pData = dynamic_cast<const CSqlPlayerRequest *>(pGameData);
+	auto *pResult = dynamic_cast<CScorePlayerResult *>(pGameData->m_pResult.get());
+	auto *paMessages = pResult->m_Data.m_aaMessages;
+
+	int LimitStart = maximum(pData->m_Offset - 1, 0);
+
+	char aBuf[512];
+	str_format(aBuf, sizeof(aBuf),
+		"SELECT RANK() OVER (ORDER BY a.RoundsWon DESC) as Ranking, RoundsWon, RoundsPlayed, Name "
+		"FROM ("
+		"  SELECT RoundsWon, Name, RoundsPlayed"
+		"  FROM %s_stats "
+		"  ORDER BY RoundsWon DESC LIMIT ?"
+		") as a "
+		"ORDER BY Ranking ASC, Name ASC LIMIT ?, 5",
+		pSqlServer->GetPrefix());
+	if(pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
+	{
+		return true;
+	}
+	pSqlServer->BindInt(1, LimitStart + 5);
+	pSqlServer->BindInt(2, LimitStart);
+
+	// show most wins
+	str_copy(paMessages[0], "-------- Most Wins --------", sizeof(paMessages[0]));
+
+	bool End = false;
+	int Line = 1;
+	while(!pSqlServer->Step(&End, pError, ErrorSize) && !End)
+	{
+		int Rank = pSqlServer->GetInt(1);
+		int Wins = pSqlServer->GetInt(2);
+		int Played = pSqlServer->GetInt(3);
+		char aName[MAX_NAME_LENGTH];
+		pSqlServer->GetString(4, aName, sizeof(aName));
+		str_format(paMessages[Line], sizeof(paMessages[Line]),
+			"%d. %s: %d wins (%.02f%%)", Rank, aName, Wins, ((float)Wins / (float)Played) * 100.0f);
+		Line++;
+	}
+	if(!End)
+	{
+		return true;
+	}
+	str_copy(paMessages[Line], "-------------------------------", sizeof(paMessages[Line]));
+
 	return false;
 }

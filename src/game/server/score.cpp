@@ -415,3 +415,10 @@ void CScore::ShowStats(int ClientId, const char *pName)
 		return;
 	ExecPlayerThread(CScoreWorker::ShowStats, "show rank", ClientId, pName, 0);
 }
+
+void CScore::ShowTopWins(int ClientId, int Offset)
+{
+	if(RateLimitPlayer(ClientId))
+		return;
+	ExecPlayerThread(CScoreWorker::ShowTopWins, "show top points", ClientId, "", Offset);
+}

@@ -2371,3 +2371,15 @@ void CGameContext::ConStats(IConsole::IResult *pResult, void *pUserData)
 		pSelf->Score()->ShowStats(pResult->m_ClientId,
 			pSelf->Server()->ClientName(pResult->m_ClientId));
 }
+
+void CGameContext::ConTopWins(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if(!CheckClientId(pResult->m_ClientId))
+		return;
+
+	if(pResult->NumArguments() > 0)
+		pSelf->Score()->ShowTopWins(pResult->m_ClientId, pResult->GetInteger(0));
+	else
+		pSelf->Score()->ShowTopWins(pResult->m_ClientId, 0);
+}
