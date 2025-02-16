@@ -504,6 +504,12 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 			GameServer()->SendChat(-1, TEAM_ALL, "Noone won the round!");
 		}
 
+		if(m_WasMysteryRound)
+		{
+			GameServer()->Console()->ExecuteFile(g_Config.m_SvMysteryRoundsResetFileName);
+			m_WasMysteryRound = false;
+		}
+
 		std::vector<std::string> vTemp;
 		while(g_Config.m_BombtagMysteryChance && rand() % 101 <= g_Config.m_BombtagMysteryChance)
 		{
@@ -513,6 +519,7 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 			}
 			if(!m_WasMysteryRound)
 			{
+				GameServer()->Console()->ExecuteFile(g_Config.m_SvMysteryRoundsResetFileName);
 				GameServer()->SendChat(-1, TEAM_ALL, "MYSTERY ROUND!");
 			}
 			const char *pLine = GameServer()->Server()->GetMysteryRoundLine();
@@ -522,17 +529,10 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 				{
 					continue;
 				}
-
-				GameServer()->Console()->ExecuteFile(g_Config.m_SvMysteryRoundsResetFileName);
 				GameServer()->Console()->ExecuteLine(pLine);
 				m_WasMysteryRound = true;
 				vTemp.emplace_back(pLine);
 			}
-		}
-		if(m_WasMysteryRound)
-		{
-			GameServer()->Console()->ExecuteFile(g_Config.m_SvMysteryRoundsResetFileName);
-			m_WasMysteryRound = false;
 		}
 
 		EndRound();
