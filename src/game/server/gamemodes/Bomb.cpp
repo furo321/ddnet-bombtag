@@ -463,6 +463,9 @@ int CGameControllerBomb::AmountOfBombs()
 
 void CGameControllerBomb::EndBombRound(bool RealEnd)
 {
+	if(!m_RoundActive)
+		return;
+
 	int Alive = 0;
 	for(auto &aPlayer : m_aPlayers)
 		if(aPlayer.m_State == STATE_ALIVE && !aPlayer.m_Bomb)
@@ -482,6 +485,7 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 	}
 	else
 	{
+		bool WinnerAnnounced = false;
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
 			if(m_aPlayers[i].m_State == STATE_ALIVE)
@@ -491,24 +495,30 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 				GameServer()->SendChat(-1, TEAM_ALL, aBuf);
 				GameServer()->m_apPlayers[i]->m_Score = GameServer()->m_apPlayers[i]->m_Score.value_or(0) + 1;
 				GameServer()->Score()->SaveStats(Server()->ClientName(i), true);
-				if(g_Config.m_BombtagMysteryChance && rand() % 101 <= g_Config.m_BombtagMysteryChance)
-				{
-					const char *pLine = GameServer()->Server()->GetMysteryRoundLine();
-					if(pLine)
-					{
-						GameServer()->SendChat(-1, TEAM_ALL, "MYSTERY ROUND!");
-						GameServer()->Console()->ExecuteFile(g_Config.m_SvMysteryRoundsResetFileName);
-						GameServer()->Console()->ExecuteLine(pLine);
-						m_WasMysteryRound = true;
-					}
-				}
-				else if(m_WasMysteryRound)
-				{
-					GameServer()->Console()->ExecuteFile(g_Config.m_SvMysteryRoundsResetFileName);
-					m_WasMysteryRound = false;
-				}
+				WinnerAnnounced = true;
 				break;
 			}
+		}
+		if(!WinnerAnnounced)
+		{
+			GameServer()->SendChat(-1, TEAM_ALL, "Noone won the round!");
+		}
+
+		if(g_Config.m_BombtagMysteryChance && rand() % 101 <= g_Config.m_BombtagMysteryChance)
+		{
+			const char *pLine = GameServer()->Server()->GetMysteryRoundLine();
+			if(pLine)
+			{
+				GameServer()->SendChat(-1, TEAM_ALL, "MYSTERY ROUND!");
+				GameServer()->Console()->ExecuteFile(g_Config.m_SvMysteryRoundsResetFileName);
+				GameServer()->Console()->ExecuteLine(pLine);
+				m_WasMysteryRound = true;
+			}
+		}
+		else if(m_WasMysteryRound)
+		{
+			GameServer()->Console()->ExecuteFile(g_Config.m_SvMysteryRoundsResetFileName);
+			m_WasMysteryRound = false;
 		}
 
 		EndRound();
@@ -535,15 +545,37 @@ void CGameControllerBomb::ExplodeBomb(int ClientId)
 	GameServer()->CreateExplosion(GameServer()->m_apPlayers[ClientId]->m_ViewPos, ClientId, WEAPON_GAME, true, 0);
 	GameServer()->CreateSound(GameServer()->m_apPlayers[ClientId]->m_ViewPos, SOUND_GRENADE_EXPLODE);
 	m_aPlayers[ClientId].m_State = STATE_ACTIVE;
-	GameServer()->m_apPlayers[ClientId]->KillCharacter();
 
+	// Collateral damage
+	for(auto &pPlayer : GameServer()->m_apPlayers)
+	{
+		if(!g_Config.m_BombtagCollateralDamage)
+			break;
+
+		if(!pPlayer)
+			continue;
+
+		CCharacter *pChr = pPlayer->GetCharacter();
+		if(!pChr)
+			continue;
+
+		if(ClientId == pPlayer->GetCid())
+			continue;
+
+		if(distance(pPlayer->m_ViewPos, GameServer()->m_apPlayers[ClientId]->m_ViewPos) <= 96)
+		{
+			GameServer()->m_apPlayers[ClientId]->KillCharacter();
+			EliminatePlayer(pPlayer->GetCid(), true);
+		}
+	}
+	GameServer()->m_apPlayers[ClientId]->KillCharacter();
 	EliminatePlayer(ClientId);
 }
 
-void CGameControllerBomb::EliminatePlayer(int ClientId)
+void CGameControllerBomb::EliminatePlayer(int ClientId, bool Collateral)
 {
 	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "'%s' eliminated!", Server()->ClientName(ClientId));
+	str_format(aBuf, sizeof(aBuf), "'%s' eliminated%s!", Server()->ClientName(ClientId), Collateral ? " by collateral damage" : "");
 	GameServer()->SendChat(-1, TEAM_ALL, aBuf);
 	GameServer()->Score()->SaveStats(Server()->ClientName(ClientId), false);
 

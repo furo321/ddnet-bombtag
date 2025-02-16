@@ -66,7 +66,7 @@ public:
 	void StartBombRound();
 	void EndBombRound(bool RealEnd);
 	void ExplodeBomb(int ClientId);
-	void EliminatePlayer(int ClientId);
+	void EliminatePlayer(int ClientId, bool Collateral = false);
 	void UpdateTimer();
 	void DoAfkLogic();
 
