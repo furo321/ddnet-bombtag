@@ -52,7 +52,7 @@ public:
 	int GetBlob(int Col, unsigned char *pBuffer, int BufferSize) override;
 
 	bool AddPoints(const char *pPlayer, int Points, char *pError, int ErrorSize) override;
-	bool SaveStats(const char *pPlayer, bool RoundWin, char *pError, int ErrorSize) override;
+	bool SaveStats(const char *pPlayer, bool Winner, int HammerKills, int CollateralKills, int RoundsSurvived, char *pError, int ErrorSize) override;
 
 	// fail safe
 	bool CreateFailsafeTables();
@@ -416,21 +416,28 @@ bool CSqliteConnection::AddPoints(const char *pPlayer, int Points, char *pError,
 	return Step(&End, pError, ErrorSize);
 }
 
-bool CSqliteConnection::SaveStats(const char *pPlayer, bool RoundWin, char *pError, int ErrorSize)
+bool CSqliteConnection::SaveStats(const char *pPlayer, bool Winner, int HammerKills, int CollateralKills, int RoundsSurvived, char *pError, int ErrorSize)
 {
 	char aBuf[512];
 	str_format(aBuf, sizeof(aBuf),
-		"INSERT INTO %s_stats(Name, RoundsWon, RoundsPlayed) "
-		"VALUES (?, ?, 1) "
-		"ON CONFLICT(Name) DO UPDATE SET RoundsWon=RoundsWon+?, RoundsPlayed=RoundsPlayed+1",
+		"INSERT INTO %s_stats(Name, GamesWon, GamesPlayed, HammerKills, CollateralKills, RoundsSurvived) "
+		"VALUES (?, ?, 1, ?, ?, ?) "
+		"ON CONFLICT(Name) DO UPDATE SET GamesWon=GamesWon+?, GamesPlayed=GamesPlayed+1, HammerKills=HammerKills+?,"
+		" CollateralKills=CollateralKills+?, RoundsSurvived=RoundsSurvived+?",
 		GetPrefix());
 	if(PrepareStatement(aBuf, pError, ErrorSize))
 	{
 		return true;
 	}
 	BindString(1, pPlayer);
-	BindInt(2, RoundWin);
-	BindInt(3, RoundWin);
+	BindInt(2, Winner);
+	BindInt(3, HammerKills);
+	BindInt(4, CollateralKills);
+	BindInt(5, RoundsSurvived);
+	BindInt(6, Winner);
+	BindInt(7, HammerKills);
+	BindInt(8, CollateralKills);
+	BindInt(9, RoundsSurvived);
 	bool End;
 	return Step(&End, pError, ErrorSize);
 }

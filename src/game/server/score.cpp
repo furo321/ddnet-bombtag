@@ -395,18 +395,21 @@ void CScore::GetSaves(int ClientId)
 	ExecPlayerThread(CScoreWorker::GetSaves, "get saves", ClientId, "", 0);
 }
 
-void CScore::SaveStats(const char *pName, bool RoundWin)
+void CScore::SaveStats(const char *pName, bool Winner, int HammerKills, int CollateralKills, int RoundsSurvived)
 {
 	auto Tmp = std::make_unique<CSqlSaveStats>();
 	str_copy(Tmp->m_aName, pName);
-	Tmp->m_RoundWin = RoundWin;
+	Tmp->m_Winner = Winner;
+	Tmp->m_HammerKills = HammerKills;
+	Tmp->m_CollateralKills = CollateralKills;
+	Tmp->m_RoundsSurvived = RoundsSurvived;
 
 	m_pPool->ExecuteWrite(CScoreWorker::SaveStats, std::move(Tmp), "save score");
 }
 
-void CScore::LoadPlayerRoundsWon(int ClientId, const char *pName)
+void CScore::LoadPlayerGamesWon(int ClientId, const char *pName)
 {
-	ExecPlayerThread(CScoreWorker::LoadPlayerRoundsWon, "load player data", ClientId, pName, 0);
+	ExecPlayerThread(CScoreWorker::LoadPlayerGamesWon, "load games won data", ClientId, pName, 0);
 }
 
 void CScore::ShowStats(int ClientId, const char *pName)
@@ -420,5 +423,5 @@ void CScore::ShowTopWins(int ClientId, int Offset)
 {
 	if(RateLimitPlayer(ClientId))
 		return;
-	ExecPlayerThread(CScoreWorker::ShowTopWins, "show top points", ClientId, "", Offset);
+	ExecPlayerThread(CScoreWorker::ShowTopWins, "show top wins", ClientId, "", Offset);
 }

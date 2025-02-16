@@ -930,8 +930,8 @@ void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
 			str_format(aBuf, sizeof(aBuf), "Showing the checkpoint times for '%s' with a race time of %s", Result.m_Data.m_Info.m_aRequestedPlayer, aTime);
 			GameServer()->SendChatTarget(m_ClientId, aBuf);
 			break;
-		case CScorePlayerResult::PLAYER_ROUNDSWON:
-			GameServer()->m_apPlayers[m_ClientId]->m_Score = Result.m_Data.m_Info.m_RoundsWon;
+		case CScorePlayerResult::PLAYER_GAMESWON:
+			GameServer()->m_apPlayers[m_ClientId]->m_Score = Result.m_Data.m_Info.m_GamesWon;
 			break;
 		}
 	}

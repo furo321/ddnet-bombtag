@@ -87,7 +87,7 @@ public:
 
 	// SQL statements, that can't be abstracted, has side effects to the result
 	virtual bool AddPoints(const char *pPlayer, int Points, char *pError, int ErrorSize) = 0;
-	virtual bool SaveStats(const char *pPlayer, bool RoundWin, char *pError, int ErrorSize) = 0;
+	virtual bool SaveStats(const char *pPlayer, bool Winner, int HammerKills, int CollateralKills, int RoundsSurvived, char *pError, int ErrorSize) = 0;
 
 private:
 	char m_aPrefix[64];

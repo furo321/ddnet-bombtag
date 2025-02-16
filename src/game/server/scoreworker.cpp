@@ -50,8 +50,8 @@ void CScorePlayerResult::SetVariant(Variant v)
 		for(float &TimeCp : m_Data.m_Info.m_aTimeCp)
 			TimeCp = 0;
 		break;
-	case PLAYER_ROUNDSWON:
-		m_Data.m_Info.m_RoundsWon = 0;
+	case PLAYER_GAMESWON:
+		m_Data.m_Info.m_GamesWon = 0;
 		break;
 	}
 }
@@ -1953,21 +1953,21 @@ bool CScoreWorker::GetSaves(IDbConnection *pSqlServer, const ISqlData *pGameData
 bool CScoreWorker::SaveStats(IDbConnection *pSqlServer, const ISqlData *pGameData, Write w, char *pError, int ErrorSize)
 {
 	const auto *pData = dynamic_cast<const CSqlSaveStats *>(pGameData);
-	if(pSqlServer->SaveStats(pData->m_aName, pData->m_RoundWin, pError, ErrorSize))
+	if(pSqlServer->SaveStats(pData->m_aName, pData->m_Winner, pData->m_HammerKills, pData->m_CollateralKills, pData->m_RoundsSurvived, pError, ErrorSize))
 	{
 		return true;
 	}
 	return false;
 }
 
-bool CScoreWorker::LoadPlayerRoundsWon(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize)
+bool CScoreWorker::LoadPlayerGamesWon(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize)
 {
 	const auto *pData = dynamic_cast<const CSqlPlayerRequest *>(pGameData);
 	auto *pResult = dynamic_cast<CScorePlayerResult *>(pGameData->m_pResult.get());
 
 	char aBuf[1024];
 	str_format(aBuf, sizeof(aBuf),
-		"SELECT RoundsWon "
+		"SELECT GamesWon "
 		"FROM %s_stats "
 		"WHERE Name = ? "
 		"LIMIT 1",
@@ -1986,8 +1986,8 @@ bool CScoreWorker::LoadPlayerRoundsWon(IDbConnection *pSqlServer, const ISqlData
 	}
 	if(!End)
 	{
-		pResult->SetVariant(CScorePlayerResult::PLAYER_ROUNDSWON);
-		pResult->m_Data.m_Info.m_RoundsWon = pSqlServer->GetInt(1);
+		pResult->SetVariant(CScorePlayerResult::PLAYER_GAMESWON);
+		pResult->m_Data.m_Info.m_GamesWon = pSqlServer->GetInt(1);
 	}
 	return false;
 }
@@ -2000,9 +2000,9 @@ bool CScoreWorker::ShowStats(IDbConnection *pSqlServer, const ISqlData *pGameDat
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf),
 		"SELECT ("
-		"  SELECT COUNT(Name) + 1 FROM %s_stats WHERE RoundsWon > ("
-		"    SELECT RoundsWon FROM %s_stats WHERE Name = ?"
-		")) as Ranking, RoundsWon, RoundsPlayed, Name "
+		"  SELECT COUNT(Name) + 1 FROM %s_stats WHERE GamesWon > ("
+		"    SELECT GamesWon FROM %s_stats WHERE Name = ?"
+		")) as Ranking, GamesWon, GamesPlayed, HammerKills, CollateralKills, RoundsSurvived, Name "
 		"FROM %s_stats WHERE Name = ?",
 		pSqlServer->GetPrefix(), pSqlServer->GetPrefix(), pSqlServer->GetPrefix());
 
@@ -2022,27 +2022,32 @@ bool CScoreWorker::ShowStats(IDbConnection *pSqlServer, const ISqlData *pGameDat
 	if(!End)
 	{
 		int Ranking = pSqlServer->GetInt(1);
-		int RoundsWon = pSqlServer->GetInt(2);
-		int RoundsPlayed = pSqlServer->GetInt(3);
+		int GamesWon = pSqlServer->GetInt(2);
+		int GamesPlayed = pSqlServer->GetInt(3);
+		int HammerKills = pSqlServer->GetInt(4);
+		int CollateralKills = pSqlServer->GetInt(5);
+		int RoundsSurvived = pSqlServer->GetInt(6);
 
 		if(str_comp_nocase(pData->m_aRequestingPlayer, pData->m_aName) == 0)
 		{
 			str_format(pResult->m_Data.m_aaMessages[0], sizeof(pResult->m_Data.m_aaMessages[0]),
-				"%d. %s has won %d rounds of bombtag and played a total of %d with a win rate of %.02f%%",
-				Ranking, pData->m_aName, RoundsWon, RoundsPlayed, ((float)RoundsWon / (float)RoundsPlayed) * 100.0f);
+				"%d. %s has won %d games of bombtag and played a total of %d with a win rate of %.02f%%",
+				Ranking, pData->m_aName, GamesWon, GamesPlayed, ((float)GamesWon / (float)GamesPlayed) * 100.0f);
 		}
 		else
 		{
 			pResult->m_MessageKind = CScorePlayerResult::ALL;
 			str_format(pResult->m_Data.m_aaMessages[0], sizeof(pResult->m_Data.m_aaMessages[0]),
-				"%d. %s has won %d rounds of bombtag and played a total of %d with a win rate of %.02f%% requested by %s",
-				Ranking, pData->m_aName, RoundsWon, RoundsPlayed, ((float)RoundsWon / (float)RoundsPlayed) * 100.0f, pData->m_aRequestingPlayer);
+				"%d. %s has won %d games of bombtag and played a total of %d with a win rate of %.02f%% requested by %s",
+				Ranking, pData->m_aName, GamesWon, GamesPlayed, ((float)GamesWon / (float)GamesPlayed) * 100.0f, pData->m_aRequestingPlayer);
 		}
+		str_format(pResult->m_Data.m_aaMessages[1], sizeof(pResult->m_Data.m_aaMessages[1]),
+			"Hammer kills: %d - Collateral kills: %d - Total rounds survived: %d", HammerKills, CollateralKills, RoundsSurvived);
 	}
 	else
 	{
 		str_format(pResult->m_Data.m_aaMessages[0], sizeof(pResult->m_Data.m_aaMessages[0]),
-			"%s has not played any rounds of bombtag", pData->m_aName);
+			"%s has not played any games of bombtag", pData->m_aName);
 	}
 	return false;
 }
@@ -2057,11 +2062,11 @@ bool CScoreWorker::ShowTopWins(IDbConnection *pSqlServer, const ISqlData *pGameD
 
 	char aBuf[512];
 	str_format(aBuf, sizeof(aBuf),
-		"SELECT RANK() OVER (ORDER BY a.RoundsWon DESC) as Ranking, RoundsWon, RoundsPlayed, Name "
+		"SELECT RANK() OVER (ORDER BY a.GamesWon DESC) as Ranking, GamesWon, GamesPlayed, Name "
 		"FROM ("
-		"  SELECT RoundsWon, Name, RoundsPlayed"
+		"  SELECT GamesWon, Name, GamesPlayed"
 		"  FROM %s_stats "
-		"  ORDER BY RoundsWon DESC LIMIT ?"
+		"  ORDER BY GamesWon DESC LIMIT ?"
 		") as a "
 		"ORDER BY Ranking ASC, Name ASC LIMIT ?, 5",
 		pSqlServer->GetPrefix());

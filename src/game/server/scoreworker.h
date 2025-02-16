@@ -40,7 +40,7 @@ struct CScorePlayerResult : ISqlResult
 		MAP_VOTE,
 		PLAYER_INFO,
 		PLAYER_TIMECP,
-		PLAYER_ROUNDSWON,
+		PLAYER_GAMESWON,
 	} m_MessageKind;
 	union
 	{
@@ -49,7 +49,7 @@ struct CScorePlayerResult : ISqlResult
 		struct
 		{
 			std::optional<float> m_Time;
-			int m_RoundsWon;
+			int m_GamesWon;
 			float m_aTimeCp[NUM_CHECKPOINTS];
 			int m_Birthday; // 0 indicates no birthday
 			char m_aRequestedPlayer[MAX_NAME_LENGTH];
@@ -230,7 +230,10 @@ struct CSqlSaveStats : ISqlData
 	}
 
 	char m_aName[MAX_NAME_LENGTH];
-	bool m_RoundWin;
+	bool m_Winner;
+	int m_CollateralKills = 0;
+	int m_HammerKills = 0;
+	int m_RoundsSurvived = 0;
 };
 
 class CPlayerData
@@ -325,7 +328,7 @@ struct CScoreWorker
 	static bool SaveTeamScore(IDbConnection *pSqlServer, const ISqlData *pGameData, Write w, char *pError, int ErrorSize);
 
 	static bool SaveStats(IDbConnection *pSqlServer, const ISqlData *pGameData, Write w, char *pError, int ErrorSize);
-	static bool LoadPlayerRoundsWon(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize);
+	static bool LoadPlayerGamesWon(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize);
 	static bool ShowStats(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize);
 	static bool ShowTopWins(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize);
 };

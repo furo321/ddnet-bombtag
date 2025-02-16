@@ -73,8 +73,8 @@ public:
 	void LoadTeam(const char *pCode, int ClientId);
 	void GetSaves(int ClientId);
 
-	void SaveStats(const char *pName, bool RoundWin);
-	void LoadPlayerRoundsWon(int ClientId, const char *pName);
+	void SaveStats(const char *pName, bool Winner, int HammerKills, int CollateralKills, int RoundsSurvived);
+	void LoadPlayerGamesWon(int ClientId, const char *pName);
 	void ShowStats(int ClientId, const char *pName);
 	void ShowTopWins(int ClientId, int Offset);
 };

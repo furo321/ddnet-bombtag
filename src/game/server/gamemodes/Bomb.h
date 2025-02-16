@@ -53,6 +53,9 @@ public:
 		int m_TicksAfk = 0;
 		int m_AfkHash = 0;
 		bool m_Bomb = false;
+		int m_CollateralKills = 0;
+		int m_HammerKills = 0;
+		int m_RoundsSurvived = 0;
 		CSkinInfo m_RealSkin;
 	} m_aPlayers[MAX_CLIENTS];
 

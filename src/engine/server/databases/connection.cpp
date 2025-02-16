@@ -96,8 +96,11 @@ void IDbConnection::FormatCreateStats(char *aBuf, unsigned int BufferSize) const
 	str_format(aBuf, BufferSize,
 		"CREATE TABLE IF NOT EXISTS %s_stats ("
 		"  Name VARCHAR(%d) COLLATE %s NOT NULL, "
-		"  RoundsWon INT DEFAULT 0, "
-		"  RoundsPlayed INT DEFAULT 0, "
+		"  GamesWon INT DEFAULT 0, "
+		"  GamesPlayed INT DEFAULT 0, "
+		"  RoundsSurvived INT DEFAULT 0, "
+		"  CollateralKills INT DEFAULT 0, "
+		"  HammerKills INT DEFAULT 0, "
 		"  PRIMARY KEY (Name)"
 		")",
 		GetPrefix(), MAX_NAME_LENGTH_SQL, BinaryCollate());

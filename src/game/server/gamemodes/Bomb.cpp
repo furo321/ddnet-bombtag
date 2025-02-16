@@ -69,7 +69,7 @@ int CGameControllerBomb::OnCharacterDeath(CCharacter *pVictim, CPlayer *pKiller,
 void CGameControllerBomb::OnPlayerConnect(CPlayer *pPlayer)
 {
 	IGameController::OnPlayerConnect(pPlayer);
-	GameServer()->Score()->LoadPlayerRoundsWon(pPlayer->GetCid(), Server()->ClientName(pPlayer->GetCid()));
+	GameServer()->Score()->LoadPlayerGamesWon(pPlayer->GetCid(), Server()->ClientName(pPlayer->GetCid()));
 	int ClientId = pPlayer->GetCid();
 
 	if(pPlayer->GetTeam() == TEAM_SPECTATORS && m_aPlayers[ClientId].m_State != STATE_ACTIVE)
@@ -107,6 +107,9 @@ void CGameControllerBomb::OnReset()
 		{
 			aPlayer.m_State = STATE_ACTIVE;
 			aPlayer.m_Bomb = false;
+			aPlayer.m_CollateralKills = 0;
+			aPlayer.m_RoundsSurvived = 0;
+			aPlayer.m_HammerKills = 0;
 		}
 		m_RoundActive = false;
 	}
@@ -365,11 +368,17 @@ void CGameControllerBomb::OnTakeDamage(int Dmg, int From, int To, int Weapon)
 			pNewBombChr->SetWeapon(g_Config.m_BombtagBombWeapon);
 		}
 	}
-	else if(!m_aPlayers[From].m_Bomb && m_aPlayers[To].m_Bomb)
+	else if(!m_aPlayers[From].m_Bomb && m_aPlayers[To].m_Bomb && m_aPlayers[To].m_Tick > 0)
 	{
 		// damage to bomb
 		m_aPlayers[To].m_Tick -= g_Config.m_BombtagBombDamage * SERVER_TICK_SPEED;
 		UpdateTimer();
+
+		// Increase stats if they killed the player
+		if(m_aPlayers[To].m_Tick <= 0)
+		{
+			m_aPlayers[From].m_HammerKills++;
+		}
 	}
 	else if(!m_aPlayers[From].m_Bomb && !m_aPlayers[To].m_Bomb && g_Config.m_BombtagHammerFreeze)
 	{
@@ -468,18 +477,16 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 
 	int Alive = 0;
 	for(auto &aPlayer : m_aPlayers)
+	{
 		if(aPlayer.m_State == STATE_ALIVE && !aPlayer.m_Bomb)
+		{
 			Alive++;
+			aPlayer.m_RoundsSurvived++;
+		}
+	}
 
 	if(!RealEnd)
 	{
-		// for(int i = 0; i < MAX_CLIENTS; i++)
-		// {
-		// 	if(m_aPlayers[i].m_State == STATE_ALIVE)
-		// 	{
-		// 		GameServer()->m_apPlayers[i]->m_Score = GameServer()->m_apPlayers[i]->m_Score.value_or(0) + 1;
-		// 	}
-		// }
 		const int BombsPerPlayer = g_Config.m_BombtagBombsPerPlayer;
 		MakeRandomBomb(std::ceil((Alive / (float)BombsPerPlayer) - (BombsPerPlayer == 1 ? 1 : 0)));
 	}
@@ -494,7 +501,8 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 				str_format(aBuf, sizeof(aBuf), "'%s' won the round!", Server()->ClientName(i));
 				GameServer()->SendChat(-1, TEAM_ALL, aBuf);
 				GameServer()->m_apPlayers[i]->m_Score = GameServer()->m_apPlayers[i]->m_Score.value_or(0) + 1;
-				GameServer()->Score()->SaveStats(Server()->ClientName(i), true);
+				auto pPlayer = m_aPlayers[i];
+				GameServer()->Score()->SaveStats(Server()->ClientName(i), true, pPlayer.m_HammerKills, pPlayer.m_CollateralKills, pPlayer.m_RoundsSurvived);
 				WinnerAnnounced = true;
 				break;
 			}
@@ -580,6 +588,7 @@ void CGameControllerBomb::ExplodeBomb(int ClientId)
 		{
 			pPlayer->KillCharacter();
 			EliminatePlayer(pPlayer->GetCid(), true);
+			m_aPlayers[ClientId].m_CollateralKills++;
 		}
 	}
 	GameServer()->m_apPlayers[ClientId]->KillCharacter();
@@ -591,7 +600,8 @@ void CGameControllerBomb::EliminatePlayer(int ClientId, bool Collateral)
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "'%s' eliminated%s!", Server()->ClientName(ClientId), Collateral ? " by collateral damage" : "");
 	GameServer()->SendChat(-1, TEAM_ALL, aBuf);
-	GameServer()->Score()->SaveStats(Server()->ClientName(ClientId), false);
+	auto pPlayer = m_aPlayers[ClientId];
+	GameServer()->Score()->SaveStats(Server()->ClientName(ClientId), false, pPlayer.m_HammerKills, pPlayer.m_CollateralKills, pPlayer.m_RoundsSurvived);
 
 	m_aPlayers[ClientId].m_Bomb = false;
 	m_aPlayers[ClientId].m_State = STATE_ACTIVE;
