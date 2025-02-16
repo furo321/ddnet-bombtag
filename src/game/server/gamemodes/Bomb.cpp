@@ -578,7 +578,7 @@ void CGameControllerBomb::ExplodeBomb(int ClientId)
 
 		if(distance(pPlayer->m_ViewPos, GameServer()->m_apPlayers[ClientId]->m_ViewPos) <= 96)
 		{
-			GameServer()->m_apPlayers[ClientId]->KillCharacter();
+			pPlayer->KillCharacter();
 			EliminatePlayer(pPlayer->GetCid(), true);
 		}
 	}
