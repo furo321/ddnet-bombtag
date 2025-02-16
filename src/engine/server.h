@@ -276,6 +276,7 @@ public:
 	virtual void ReadAnnouncementsFile(const char *pFileName) = 0;
 	virtual const char *GetMysteryRoundLine() = 0;
 	virtual void ReadMysteryRoundsFile(const char *pFileName) = 0;
+	virtual size_t GetMysteryRoundsSize() = 0;
 	virtual bool ClientPrevIngame(int ClientId) = 0;
 	virtual const char *GetNetErrorString(int ClientId) = 0;
 	virtual void ResetNetErrorString(int ClientId) = 0;

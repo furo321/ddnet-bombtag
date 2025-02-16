@@ -504,18 +504,32 @@ void CGameControllerBomb::EndBombRound(bool RealEnd)
 			GameServer()->SendChat(-1, TEAM_ALL, "Noone won the round!");
 		}
 
-		if(g_Config.m_BombtagMysteryChance && rand() % 101 <= g_Config.m_BombtagMysteryChance)
+		std::vector<std::string> vTemp;
+		while(g_Config.m_BombtagMysteryChance && rand() % 101 <= g_Config.m_BombtagMysteryChance)
 		{
+			if(vTemp.size() == Server()->GetMysteryRoundsSize())
+			{
+				break;
+			}
+			if(!m_WasMysteryRound)
+			{
+				GameServer()->SendChat(-1, TEAM_ALL, "MYSTERY ROUND!");
+			}
 			const char *pLine = GameServer()->Server()->GetMysteryRoundLine();
 			if(pLine)
 			{
-				GameServer()->SendChat(-1, TEAM_ALL, "MYSTERY ROUND!");
+				if(std::find(vTemp.begin(), vTemp.end(), pLine) != vTemp.end())
+				{
+					continue;
+				}
+
 				GameServer()->Console()->ExecuteFile(g_Config.m_SvMysteryRoundsResetFileName);
 				GameServer()->Console()->ExecuteLine(pLine);
 				m_WasMysteryRound = true;
+				vTemp.emplace_back(pLine);
 			}
 		}
-		else if(m_WasMysteryRound)
+		if(m_WasMysteryRound)
 		{
 			GameServer()->Console()->ExecuteFile(g_Config.m_SvMysteryRoundsResetFileName);
 			m_WasMysteryRound = false;

@@ -452,6 +452,7 @@ public:
 
 	const char *GetMysteryRoundLine() override;
 	void ReadMysteryRoundsFile(const char *pFileName) override;
+	size_t GetMysteryRoundsSize() override { return m_vMysteryRounds.size(); }
 
 	int *GetIdMap(int ClientId) override;
 
