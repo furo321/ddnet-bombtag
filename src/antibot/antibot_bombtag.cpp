@@ -131,6 +131,25 @@ bool AntibotOnEngineClientMessage(int ClientId, const void *pData, int Size, int
 		return false;
 	}
 
+	if(Msg == NETMSG_CLIENTVER)
+	{
+		CUuid *pConnectionId = (CUuid *)Unpacker.GetRaw(sizeof(*pConnectionId));
+		int DDNetVersion = Unpacker.GetInt();
+		const char *pDDNetVersionStr = Unpacker.GetString(CUnpacker::SANITIZE_CC);
+		if(Unpacker.Error() || DDNetVersion < 0)
+		{
+			return false;
+		}
+		
+		if(str_find_nocase(pDDNetVersionStr, "npmjs"))
+		{
+			char aBuf[1024];
+			str_format(aBuf, sizeof(aBuf), "Kicked ID %d due to client lib", ClientId);
+			g_pData->m_pfnLog(aBuf, g_pData->m_pUser);
+			g_pData->m_pfnKick(ClientId, "Unsupported client (0)", g_pData->m_pUser);
+		}
+	}
+
 	if(Msg == NETMSGTYPE_CL_SAY)
 	{
 		CNetObjHandler NetObjHandler;
